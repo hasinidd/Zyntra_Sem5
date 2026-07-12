@@ -1,4 +1,4 @@
-# Zyntra - Post-Break Physiological Readiness Clearance System
+# Zyntra -- Post-Break Physiological Readiness Clearance System
 
 **CS3283 - Embedded Systems Project | Semester 5 | University of Moratuwa**
 
@@ -36,7 +36,7 @@ A wrist-worn ESP32 device that monitors **three body recovery signals** during a
      ┌─────────┴────────┐
      ▼                  ▼
   READY ✅         NOT READY ❌
-  (OLED green)     (failed signal shown
+                   (failed signal shown
                     + time estimate
                     + supervisor alert)
 ```
@@ -47,43 +47,43 @@ A wrist-worn ESP32 device that monitors **three body recovery signals** during a
 |:------|:------|:------|:-------------------|:----------------|
 | **Autonomic Recovery** | MAX30102 | RMSSD (HRV) | ≥ 90% of personal baseline | Spring et al. (2018), *Frontiers in Neuroscience* |
 | **Thermoregulatory Recovery** | MLX90614 | Wrist skin temperature | Within 0.8°C of baseline | MDPI Sensors validation study (2024) |
-| **Cognitive Recovery** | Vibration motor + button | Median reaction time | < 500ms across 5 stimuli | Dinges & Powell (1985) — PVT literature |
+| **Cognitive Recovery** | Vibration motor + button | Median reaction time | < 500ms across 5 stimuli | Dinges & Powell (1985) - PVT literature |
 ---
 
 ##  System Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                   ESP32 WRISTBAND                        │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────┐ │
-│  │ MAX30102 │  │MLX90614  │  │ Vib Motor│  │DS3231  │ │
-│  │ HRV/SpO2 │  │ IR Temp  │  │ + Button │  │  RTC   │ │
-│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └───┬────┘ │
-│       └─────────────┴──────────────┴─────────────┘      │
-│                        I2C Bus (GPIO 21/22)               │
+│                   ESP32 WRISTBAND                       │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────┐   │
+│  │ MAX30102 │  │ MLX90614 │  │ Vib Motor│  │ DS3231 │   │
+│  │ HRV/SpO2 │  │ IR Temp  │  │ + Button │  │  RTC   │   │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └───┬────┘   │
+│       └─────────────┴─────────────┴────────────┘        │
+│                        I2C Bus (GPIO 21/22)             │
 │  ┌──────────┐  ┌──────────────────────────────────────┐ │
-│  │SSD1306   │  │         ESP32 Main MCU               │ │
+│  │  SSD1306 │  │         ESP32 Main MCU               │ │
 │  │   OLED   │  │  Clearance Algorithm + State Machine │ │
 │  └──────────┘  │  BLE GATT Server + SPIFFS Logger     │ │
-│                └───────────────────┬──────────────────┘ │
-│  ┌──────────┐                      │ BLE                 │
-│  │TP4056 +  │                      │                     │
-│  │3.7V LiPo │                      │                     │
-│  └──────────┘                      │                     │
+│                └──────────────────┬───────────────────┘ │
+│  ┌──────────┐                     │ BLE                 │
+│  │ TP4056 + │                     │                     │
+│  │3.7V LiPo │                     │                     │
+│  └──────────┘                     │                     │
 └───────────────────────────────────┼─────────────────────┘
                                     │
-                          ┌─────────▼──────────┐
+                          ┌─────────▼────────────┐
                           │   Flutter Mobile App │
                           │  (Supervisor Phone)  │
                           │  Live recovery dash  │
                           │  Alert notifications │
                           └─────────┬────────────┘
                                     │ Wi-Fi
-                          ┌─────────▼────────────┐
+                          ┌─────────▼─────────────┐
                           │   Firebase Realtime   │
                           │      Database         │
                           │  Clearance audit log  │
-                          └──────────────────────┘
+                          └───────────────────────┘
 ```
 
 ##  Project Structure
