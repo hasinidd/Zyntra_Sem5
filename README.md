@@ -41,163 +41,67 @@ A wrist-worn ESP32 device that monitors **three body recovery signals** during a
                     + supervisor alert)
 ```
 
-### Three Signals
-
-| Signal | Sensor | Metric | Clearance Criterion | Scientific Basis |
-|:------|:------|:------|:-------------------|:----------------|
-| **Autonomic Recovery** | MAX30102 | RMSSD (HRV) | ≥ 90% of personal baseline | Spring et al. (2018), *Frontiers in Neuroscience* |
-| **Thermoregulatory Recovery** | MLX90614 | Wrist skin temperature | Within 0.8°C of baseline | MDPI Sensors validation study (2024) |
-| **Cognitive Recovery** | Vibration motor + button | Median reaction time | < 500ms across 5 stimuli | Dinges & Powell (1985) - PVT literature |
----
 
 ##  System Architecture
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                   ESP32 WRISTBAND                       │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────┐   │
-│  │ MAX30102 │  │ MLX90614 │  │ Vib Motor│  │ DS3231 │   │
-│  │ HRV/SpO2 │  │ IR Temp  │  │ + Button │  │  RTC   │   │
-│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └───┬────┘   │
-│       └─────────────┴─────────────┴────────────┘        │
-│                        I2C Bus (GPIO 21/22)             │
-│  ┌──────────┐  ┌──────────────────────────────────────┐ │
-│  │  SSD1306 │  │         ESP32 Main MCU               │ │
-│  │   OLED   │  │  Clearance Algorithm + State Machine │ │
-│  └──────────┘  │  BLE GATT Server + SPIFFS Logger     │ │
-│                └──────────────────┬───────────────────┘ │
-│  ┌──────────┐                     │ BLE                 │
-│  │ TP4056 + │                     │                     │
-│  │3.7V LiPo │                     │                     │
-│  └──────────┘                     │                     │
-└───────────────────────────────────┼─────────────────────┘
-                                    │
-                          ┌─────────▼────────────┐
-                          │   Flutter Mobile App │
-                          │  (Supervisor Phone)  │
-                          │  Live recovery dash  │
-                          │  Alert notifications │
-                          └─────────┬────────────┘
-                                    │ Wi-Fi
-                          ┌─────────▼─────────────┐
-                          │   Firebase Realtime   │
-                          │      Database         │
-                          │  Clearance audit log  │
-                          └───────────────────────┘
-```
 
 ```mermaid
 flowchart TB
 
-%% ===========================
-%% Cloud Layer
-%% ===========================
-
-subgraph CLOUD["☁️ Cloud Layer — Firebase"]
-direction LR
-
-DB["Realtime Database<br/>Clearance Event Log"]
-DASH["Supervisor Dashboard<br/>All Workers • Alerts"]
-FCM["Push Alerts<br/>FCM Notifications"]
-
+subgraph Cloud["Cloud Layer - Firebase"]
+    direction LR
+    DB["Realtime Database<br/>Clearance Event Log"]
+    DASH["Supervisor Dashboard<br/>All Workers & Alerts"]
+    FCM["Push Alerts<br/>FCM Notifications"]
 end
 
-%% ===========================
-%% Mobile Layer
-%% ===========================
+subgraph Mobile["Mobile Layer - Flutter App (Supervisor Phone)"]
+    direction TB
 
-subgraph MOBILE["📱 Mobile Layer — Flutter App (Supervisor Phone)"]
-direction TB
+    subgraph MobileTop[" "]
+        direction LR
+        BLE["BLE Service<br/>Scan, Connect, Parse"]
+        REC["Recovery Screen<br/>Live Progress Bars"]
+        RESULT["Clearance Result<br/>READY / NOT READY"]
+    end
 
-subgraph ROW1[" "]
-direction LR
-
-BLE["BLE Service<br/>Scan • Connect • Parse"]
-REC["Recovery Screen<br/>3 Live Progress Bars"]
-RESULT["Clearance Result<br/>READY / NOT READY"]
-
+    subgraph MobileBottom[" "]
+        direction LR
+        AUDIT["Audit Log<br/>History, CSV Export"]
+        SYNC["Firebase Sync<br/>Wi-Fi Upload"]
+        ALERT["Alert Manager<br/>Push Notification"]
+    end
 end
 
-subgraph ROW2[" "]
-direction LR
+subgraph Device["Device Layer - ESP32 Wristband"]
+    direction TB
 
-AUDIT["Audit Log<br/>History • CSV Export"]
-SYNC["Firebase Sync<br/>Wi-Fi Upload"]
-ALERT["Alert Manager<br/>Push Notification"]
+    subgraph Sensors["Sensors"]
+        direction LR
+        MAX["MAX30102<br/>PPG → HRV (RMSSD)"]
+        TEMP["MLX90614<br/>Skin Temperature"]
+        RT["Motor + Button<br/>Reaction Test"]
+    end
 
+    ALG["Clearance Algorithm<br/>HRV ≥ 90% Baseline<br/>Temperature ≤ 0.8°C<br/>Reaction Time < 500 ms"]
+
+    subgraph Outputs["Outputs"]
+        direction LR
+        OLED["SSD1306 OLED<br/>READY / NOT READY"]
+        GATT["BLE GATT Server<br/>JSON Broadcast"]
+        LOG["SPIFFS Flash Log<br/>100 Offline Events"]
+    end
+
+    MAX --> ALG
+    TEMP --> ALG
+    RT --> ALG
+
+    ALG --> OLED
+    ALG --> GATT
+    ALG --> LOG
 end
 
-end
-
-%% ===========================
-%% Device Layer
-%% ===========================
-
-subgraph DEVICE["⌚ Device Layer — ESP32 Wristband (Zyntra)"]
-direction TB
-
-subgraph SENSORS["Sensors"]
-direction LR
-
-MAX["MAX30102<br/>PPG → HRV (RMSSD)"]
-MLX["MLX90614<br/>IR Skin Temperature"]
-BUTTON["Motor + Button<br/>Reaction Test"]
-
-end
-
-ALG["ESP32 Clearance Algorithm<br/><br/>HRV ≥ 90% Baseline<br/>Temp ≤ 0.8°C<br/>RT < 500 ms"]
-
-subgraph OUTPUT["Outputs"]
-direction LR
-
-OLED["SSD1306 OLED<br/>READY / NOT READY"]
-BLESERVER["BLE GATT Server<br/>JSON Broadcast"]
-SPIFFS["SPIFFS Flash Log<br/>100 Offline Events"]
-
-end
-
-MAX --> ALG
-MLX --> ALG
-BUTTON --> ALG
-
-ALG --> OLED
-ALG --> BLESERVER
-ALG --> SPIFFS
-
-end
-
-%% ===========================
-%% Cross-layer Communication
-%% ===========================
-
-BLESERVER -- "BLE Notify" --> BLE
-
-SYNC -- "Wi-Fi / HTTPS" --> DB
+GATT -- BLE Notify --> BLE
+SYNC -- Wi-Fi / HTTPS --> DB
 SYNC --> DASH
 SYNC --> FCM
-
-%% ===========================
-%% Styling
-%% ===========================
-
-style CLOUD fill:#14532d,color:#fff,stroke:#22c55e,stroke-width:2px
-style MOBILE fill:#1e3a8a,color:#fff,stroke:#60a5fa,stroke-width:2px
-style DEVICE fill:#7c2d12,color:#fff,stroke:#fb923c,stroke-width:2px
-
-style ALG fill:#0f172a,color:#fff
-style DB fill:#111827,color:#fff
-style DASH fill:#111827,color:#fff
-style FCM fill:#111827,color:#fff
-style BLE fill:#111827,color:#fff
-style REC fill:#111827,color:#fff
-style RESULT fill:#111827,color:#fff
-style AUDIT fill:#111827,color:#fff
-style SYNC fill:#111827,color:#fff
-style ALERT fill:#111827,color:#fff
-style MAX fill:#111827,color:#fff
-style MLX fill:#111827,color:#fff
-style BUTTON fill:#111827,color:#fff
-style OLED fill:#111827,color:#fff
-style BLESERVER fill:#111827,color:#fff
-style SPIFFS fill:#111827,color:#fff
 ```
