@@ -43,7 +43,7 @@ A wrist-worn ESP32 device that monitors **three body recovery signals** during a
 
 
 ##  System Architecture
-
+```
 mermaid
 flowchart TB
 
@@ -105,3 +105,4 @@ SYNC -- Wi-Fi / HTTPS --> DB
 SYNC --> DASH
 SYNC --> FCM
 
+```
