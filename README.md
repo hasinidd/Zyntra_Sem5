@@ -43,8 +43,7 @@ A wrist-worn ESP32 device that monitors **three body recovery signals** during a
 
 
 ##  System Architecture
-```
-mermaid
+```mermaid
 flowchart TB
 
 subgraph Cloud["Cloud Layer - Firebase"]
@@ -104,5 +103,4 @@ GATT -- BLE Notify --> BLE
 SYNC -- Wi-Fi / HTTPS --> DB
 SYNC --> DASH
 SYNC --> FCM
-
 ```
