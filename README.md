@@ -45,59 +45,62 @@ A wrist-worn ESP32 device that monitors **three body recovery signals** during a
 ##  System Architecture
 ```mermaid
 flowchart TB
-
-subgraph Cloud["Cloud Layer - Firebase"]
+subgraph Cloud["Cloud Layer - AWS"]
     direction LR
-    DB["Realtime Database<br/>Clearance Event Log"]
-    DASH["Supervisor Dashboard<br/>All Workers & Alerts"]
-    FCM["Push Alerts<br/>FCM Notifications"]
+    APIGW["AWS API Gateway<br/>REST Endpoints"]
+    LAMBDA["AWS Lambda<br/>FastAPI Backend"]
+    RDS["AWS RDS PostgreSQL<br/>workers · baselines · events"]
+    SNS["AWS SNS<br/>Push Notifications"]
+    APIGW --> LAMBDA
+    LAMBDA --> RDS
+    LAMBDA --> SNS
 end
-
-subgraph Mobile["Mobile Layer - Flutter App (Supervisor Phone)"]
+subgraph Mobile["Mobile Layer - React Native App (Supervisor Phone)"]
     direction TB
-
     subgraph MobileTop[" "]
         direction LR
         BLE["BLE Service<br/>Scan, Connect, Parse"]
-        REC["Recovery Screen<br/>Live Progress Bars"]
+        REC["Recovery Screen<br/>3 Progress Bars Live"]
         RESULT["Clearance Result<br/>READY / NOT READY"]
     end
-
     subgraph MobileBottom[" "]
         direction LR
         AUDIT["Audit Log<br/>History, CSV Export"]
-        SYNC["Firebase Sync<br/>Wi-Fi Upload"]
-        ALERT["Alert Manager<br/>Push Notification"]
+        SYNC["AWS API Call<br/>HTTPS Upload"]
+        ALERT["Alert Manager<br/>Push Notify on Fail"]
     end
 end
-
-subgraph Device["Device Layer - ESP32 Wristband"]
+subgraph Device["Device Layer - ESP32 Wristband (Zyntra)"]
     direction TB
-
     subgraph Sensors["Sensors"]
         direction LR
         MAX["MAX30102<br/>PPG → HRV (RMSSD)"]
-        TEMP["MLX90614<br/>Skin Temperature"]
-        RT["Motor + Button<br/>Reaction Test"]
+        TEMP["MLX90614<br/>IR Skin Temperature"]
+        RT["Motor + Button<br/>RT Micro-test (5 stimuli)"]
     end
-
-    ALG["Clearance Algorithm<br/>HRV ≥ 90% Baseline<br/>Temperature ≤ 0.8°C<br/>Reaction Time < 500 ms"]
-
+    ALG["Clearance Algorithm (ESP32 Firmware)<br/>HRV ≥ 90% Baseline<br/>Temperature ≤ 0.8°C<br/>Reaction Time < 500ms<br/>AND-Gate Verdict"]
     subgraph Outputs["Outputs"]
         direction LR
         OLED["SSD1306 OLED<br/>READY / NOT READY"]
         GATT["BLE GATT Server<br/>JSON Broadcast"]
         LOG["SPIFFS Flash Log<br/>100 Offline Events"]
     end
-
     MAX --> ALG
     TEMP --> ALG
     RT --> ALG
-
     ALG --> OLED
     ALG --> GATT
     ALG --> LOG
 end
+GATT -- BLE Notify --> BLE
+BLE --> REC
+REC --> RESULT
+RESULT --> SYNC
+RESULT --> ALERT
+SYNC -- Wi-Fi / HTTPS --> APIGW
+ALERT -- HTTPS --> APIGW
+SNS -- Push Alert --> ALERT
+SYNC --> AUDIT
 
 GATT -- BLE Notify --> BLE
 SYNC -- Wi-Fi / HTTPS --> DB
