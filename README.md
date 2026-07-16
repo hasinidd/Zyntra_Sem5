@@ -107,3 +107,71 @@ SYNC -- Wi-Fi / HTTPS --> DB
 SYNC --> DASH
 SYNC --> FCM
 ```
+
+## Project Structure
+
+```
+Zyntra_Sem5/
+│
+├── src/                             # ESP32 firmware source files (PlatformIO)
+│   ├── main.cpp                     # State machine + main loop
+│   ├── hrv.cpp                      # PPG peak detection + RMSSD computation
+│   ├── temperature.cpp              # MLX90614 sampling + baseline comparison
+│   ├── reaction_test.cpp            # 5-stimulus RT micro-test delivery + timing
+│   ├── clearance.cpp                # AND-gate clearance logic + time-to-clear estimate
+│   ├── oled_display.cpp             # All four OLED screen layouts
+│   └── ble_service.cpp              # BLE GATT server + JSON broadcast
+│
+├── include/                         # Header files
+│   ├── config.h                     # All pin definitions and threshold constants
+│   ├── hrv.h
+│   ├── temperature.h
+│   ├── reaction_test.h
+│   ├── clearance.h
+│   ├── oled_display.h
+│   └── ble_service.h
+│
+├── lib/                             # Project-specific private libraries
+│
+├── ZyntraApp/                       # React Native supervisor mobile app
+│   ├── src/
+│   │   ├── services/
+│   │   │   ├── BleService.js        # BLE scanning + connection + notify parsing
+│   │   │   └── ApiService.js        # AWS API Gateway HTTPS calls
+│   │   ├── screens/
+│   │   │   ├── DashboardScreen.js   # All workers real-time status cards
+│   │   │   ├── RecoveryScreen.js    # 3 live progress bars from BLE
+│   │   │   ├── ClearanceScreen.js   # READY / NOT READY result
+│   │   │   └── AuditLogScreen.js    # History + CSV export
+│   │   └── models/
+│   │       └── ClearanceEvent.js    # Data model for clearance events
+│   ├── App.js                       # Root component + navigation
+│   └── package.json
+│
+├── backend/                         # FastAPI Python backend (deployed to AWS Lambda)
+│   ├── main.py                      # FastAPI app + Mangum Lambda handler
+│   ├── models.py                    # PostgreSQL table models (SQLAlchemy)
+│   ├── routes/
+│   │   ├── workers.py               # POST /workers, GET /workers
+│   │   ├── events.py                # POST /clearance-events, GET /events
+│   │   └── analytics.py            # GET /events/summary
+│   ├── database.py                  # RDS PostgreSQL connection
+│   └── requirements.txt
+│
+├── database/                        # PostgreSQL schema and migrations
+│   ├── schema.sql                   # Table definitions (workers, baselines, events)
+│   └── seed.sql                     # Sample data for testing
+│
+├── validation/                      # Research validation scripts
+│   ├── compute_metrics.py           # Sensitivity / specificity vs PVT ground truth
+│   ├── recovery_analysis.py         # HRV + temp recovery curve analysis
+│   └── data/                        # Collected session data (CSV)
+│
+├── docs/                            # Documentation
+│   ├── architecture.md              # System architecture Mermaid diagram
+│   ├── wiring_diagram.png           # Hardware wiring reference
+│   └── component_list.md            # Full BOM with prices
+│
+├── platformio.ini                   # PlatformIO project configuration + library deps
+└── README.md
+```
