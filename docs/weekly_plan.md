@@ -1,8 +1,4 @@
-# Zyntra — Weekly Project Plan
-
-**Project:** Post-Break Physiological Readiness Clearance System
-**Module:** CS3283 Embedded Systems Project | Semester 5 | University of Moratuwa
-**Mid Evaluation:** 17 August 2026 | **Final Evaluation:** 5 October 2026
+# Weekly Project Plan
 
 ---
 
