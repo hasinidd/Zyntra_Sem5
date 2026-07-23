@@ -1,29 +1,39 @@
 #include <Arduino.h>
-#include "temperature.h"
-#include <Wire.h>          // ← add this line
-
+#include <Wire.h>
+#include "hrv.h"
 
 void setup() {
   Serial.begin(115200);
   delay(1000);
-  Wire.begin(21, 22); // SDA=GPIO21, SCL=GPIO22
+  Wire.begin(21, 22);
 
-  Serial.println("=== Zyntra Temperature Test ===");
+  Serial.println("=== Zyntra HRV Test ===");
 
-  // Initialise sensor
-  if (!temperature_init()) {
-    Serial.println("Temperature sensor failed. Check wiring.");
-    while(1); // Stop here if sensor not found
+  if (!hrv_init()) {
+    Serial.println("MAX30102 failed. Check wiring.");
+    while(1);
   }
 
-  Serial.println("Sensor ready. Reading temperature every 2 seconds.");
-  Serial.println("Hold your wrist near the sensor.");
+  Serial.println("Place finger or wrist on MAX30102 sensor.");
+  Serial.println("RR intervals and RMSSD will appear as beats are detected.");
 }
 
 void loop() {
-  float temp = temperature_read();
-  Serial.print("[TEMP] Current: ");
-  Serial.print(temp);
-  Serial.println(" C");
-  delay(2000);
+  // Process PPG sample every loop iteration
+  // This must run as fast as possible for accurate beat detection
+  hrv_process_sample();
+
+  // Every 10 seconds, print current RMSSD
+  static long last_print = 0;
+  if (millis() - last_print > 10000) {
+    last_print = millis();
+    float rmssd = hrv_compute_rmssd();
+    if (rmssd > 0) {
+      Serial.print("[HRV] Current RMSSD: ");
+      Serial.print(rmssd);
+      Serial.println(" ms");
+    } else {
+      Serial.println("[HRV] Waiting for enough beats...");
+    }
+  }
 }
