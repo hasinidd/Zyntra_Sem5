@@ -1,41 +1,40 @@
 #include <Arduino.h>
 #include <Wire.h>
-#include "MAX30105.h"
-#include "hrv.h"
-
-extern MAX30105 particleSensor;
+#include "oled_display.h"
 
 void setup() {
   Serial.begin(115200);
   delay(1000);
   Wire.begin(21, 22);
 
-  Serial.println("=== Zyntra HRV Test ===");
+  Serial.println("=== Zyntra OLED Test ===");
 
-  if (!hrv_init()) {
-    Serial.println("MAX30102 failed. Check wiring.");
+  if (!oled_init()) {
+    Serial.println("OLED failed. Check wiring.");
     while(1);
   }
 
-  Serial.println("Place finger firmly on MAX30102.");
-  Serial.println("Hold completely still for 60 seconds.");
-  Serial.println("RMSSD prints every 30 seconds.");
+  Serial.println("OLED initialised. Cycling through all 4 screens.");
 }
 
 void loop() {
-  hrv_process_sample();
+  // Screen 1 — Shift mode
+  Serial.println("Screen 1: Shift mode");
+  oled_show_shift_mode(42.5, true);
+  delay(3000);
 
-  static long last_print = 0;
-  if (millis() - last_print > 30000) {
-    last_print = millis();
-    float rmssd = hrv_compute_rmssd();
-    if (rmssd > 0) {
-      Serial.print("[HRV] RMSSD: ");
-      Serial.print(rmssd);
-      Serial.print(" ms  |  BPM: ");
-      Serial.println(hrv_get_bpm());
-    } else {
-      Serial.println("[HRV] Waiting for enough beats...");
-    }
-  }
+  // Screen 2 — Recovery mode
+  Serial.println("Screen 2: Recovery mode");
+  oled_show_recovery(74.0, 1.2, 8);
+  delay(3000);
+
+  // Screen 3 — READY
+  Serial.println("Screen 3: READY");
+  oled_show_ready();
+  delay(3000);
+
+  // Screen 4 — NOT READY (HRV failed)
+  Serial.println("Screen 4: NOT READY");
+  oled_show_not_ready(false, true, true, 5);
+  delay(3000);
 }
