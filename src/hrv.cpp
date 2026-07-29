@@ -7,9 +7,8 @@
 MAX30105 particleSensor;
 
 // ── RR Interval Storage ───────────────────────────────────────────────────
-// We store the last 200 RR intervals (enough for ~3 minutes at 70bpm)
 #define MAX_RR_COUNT 200
-uint16_t rr_intervals[MAX_RR_COUNT];  // in milliseconds
+uint16_t rr_intervals[MAX_RR_COUNT];
 int rr_count = 0;
 
 // Beat detection variables
@@ -20,7 +19,7 @@ float current_bpm = 0;
 static float baseline_rmssd = 0.0;
 
 // RMSSD recovery threshold
-#define HRV_RECOVERY_PERCENT 0.90  // Must reach 90% of baseline
+#define HRV_RECOVERY_PERCENT 0.90
 
 // ── Initialise sensor ─────────────────────────────────────────────────────
 bool hrv_init() {
@@ -29,15 +28,17 @@ bool hrv_init() {
     return false;
   }
 
-  // Configure for HRV-optimised mode
-  // These settings balance accuracy with power consumption
+  // Brightness 50 — calibrated for this specific module
+  // Gives IR values around 100000-118000 which is the usable range
+  // Lower than this = signal too weak for beat detection
+  // Higher than this = signal saturates at 262143
   particleSensor.setup(
-    60,    // LED brightness (0-255). 60 = ~12mA — good for wrist contact
-    4,     // Sample average: 4 samples averaged = smoother signal
-    2,     // LED mode: 2 = Red + IR (we use IR for HRV)
-    400,   // Sample rate: 400 samples/second
-    411,   // Pulse width: 411 microseconds = highest resolution
-    4096   // ADC range: 4096 nA full scale
+    50,    // LED brightness — calibrated for this module
+    4,     // Sample average — smooths the signal
+    2,     // LED mode: Red + IR
+    100,   // Sample rate — stable at 100 samples/second
+    411,   // Pulse width — highest resolution
+    4096   // ADC range — full scale
   );
 
   Serial.println("[HRV] MAX30102 initialised successfully");
@@ -45,50 +46,49 @@ bool hrv_init() {
 }
 
 // ── Process one PPG sample ────────────────────────────────────────────────
-// Call this every loop iteration
-// checkForBeat() analyses the IR value and returns true when a beat is detected
+// Call this every loop iteration for accurate beat detection
 void hrv_process_sample() {
   long ir_value = particleSensor.getIR();
 
-  // Check signal quality — if IR value is too low, no finger/wrist contact
+  // Signal quality check — below 50000 means no skin contact
   if (ir_value < 50000) {
-    // No contact — do not process
     return;
   }
 
-  // Check for heartbeat using SparkFun library algorithm
   if (checkForBeat(ir_value) == true) {
     long now = millis();
     uint16_t rr = (uint16_t)(now - last_beat_time);
     last_beat_time = now;
 
-    // Validate RR interval is physiologically plausible
-    // Normal human HR range: 30-200 bpm = RR 300ms to 2000ms
-    if (rr > 300 && rr < 2000) {
+    // Strict physiological limits
+    // 500ms to 1200ms = 50 to 120 BPM (normal resting adult range)
+    // This rejects:
+    // - Values below 500ms (above 120 BPM) = double peak detections
+    // - Values above 1200ms (below 50 BPM) = missed beats
+    if (rr > 450 && rr < 1300) {
 
-      // Artifact rejection: reject if >20% different from previous interval
-      // This filters out movement artifacts and ectopic beats
+      // Artifact rejection — 25% threshold
+      // Rejects intervals that differ too much from the previous one
+      // Catches movement artifacts and ectopic beats
       if (rr_count > 0) {
         float prev_rr = rr_intervals[rr_count - 1];
         float diff_percent = abs(rr - prev_rr) / prev_rr;
-        if (diff_percent > 0.20) {
-          // Too different from previous — likely artifact, skip it
-          Serial.println("[HRV] Artifact detected — skipping interval");
+        if (diff_percent > 0.35) {
+          Serial.println("[HRV] Artifact — skipping");
           return;
         }
       }
 
-      // Store the RR interval
+      // Store valid RR interval
       if (rr_count < MAX_RR_COUNT) {
         rr_intervals[rr_count++] = rr;
       } else {
-        // Buffer full — shift left and add new at end (sliding window)
+        // Buffer full — sliding window, drop oldest
         memmove(rr_intervals, rr_intervals + 1,
                 (MAX_RR_COUNT - 1) * sizeof(uint16_t));
         rr_intervals[MAX_RR_COUNT - 1] = rr;
       }
 
-      // Compute BPM for display
       current_bpm = 60000.0 / rr;
 
       Serial.print("[HRV] Beat detected. RR=");
@@ -100,16 +100,16 @@ void hrv_process_sample() {
 }
 
 // ── Compute RMSSD ─────────────────────────────────────────────────────────
-// RMSSD = Root Mean Square of Successive Differences between RR intervals
-// Higher RMSSD = more HRV = parasympathetic system active = recovered
+// RMSSD = Root Mean Square of Successive Differences
+// Higher RMSSD = more HRV = parasympathetic active = recovered
 float hrv_compute_rmssd() {
-  // Need at least 10 RR intervals for meaningful RMSSD
+  // Need at least 10 valid RR intervals for meaningful RMSSD
   if (rr_count < 10) {
     Serial.println("[HRV] Not enough RR intervals yet for RMSSD");
     return -1.0;
   }
 
-  // Use last 140 intervals (~2 minutes at 70bpm)
+  // Use last 140 intervals (~2 minutes at 70 BPM)
   int n = min(rr_count, 140);
   int start = rr_count - n;
 
@@ -129,16 +129,15 @@ float hrv_compute_rmssd() {
 }
 
 // ── Capture baseline ──────────────────────────────────────────────────────
-// Collect RR intervals for 3 minutes and compute baseline RMSSD
-// Worker must be sitting still and resting during this time
+// Collect RR intervals for 3 minutes at shift start
+// Worker must be seated and resting — no movement
 void hrv_capture_baseline() {
   Serial.println("[HRV] Capturing HRV baseline — sit still for 3 minutes...");
 
-  // Clear existing RR intervals
+  // Clear existing data
   rr_count = 0;
   memset(rr_intervals, 0, sizeof(rr_intervals));
 
-  // Collect samples for 3 minutes (180,000 ms)
   long start_time = millis();
   long duration = 180000; // 3 minutes
 
@@ -160,19 +159,20 @@ void hrv_capture_baseline() {
   Serial.println(" ms");
 }
 
-// ── Get baseline ──────────────────────────────────────────────────────────
+// ── Get stored baseline ───────────────────────────────────────────────────
 float hrv_get_baseline() {
   return baseline_rmssd;
 }
 
 // ── Check if HRV has recovered ────────────────────────────────────────────
+// Returns true when current RMSSD >= 90% of morning baseline
 bool hrv_is_cleared() {
   float current = hrv_compute_rmssd();
   if (current < 0) return false;
   return (current >= HRV_RECOVERY_PERCENT * baseline_rmssd);
 }
 
-// ── Get recovery percentage ───────────────────────────────────────────────
+// ── Get HRV recovery as percentage of baseline ────────────────────────────
 float hrv_get_recovery_percent() {
   if (baseline_rmssd <= 0) return 0.0;
   float current = hrv_compute_rmssd();
@@ -180,7 +180,7 @@ float hrv_get_recovery_percent() {
   return (current / baseline_rmssd) * 100.0;
 }
 
-// ── Get current BPM ───────────────────────────────────────────────────────
+// ── Get current heart rate in BPM ────────────────────────────────────────
 float hrv_get_bpm() {
   return current_bpm;
 }

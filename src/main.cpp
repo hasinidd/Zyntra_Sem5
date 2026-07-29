@@ -1,6 +1,9 @@
 #include <Arduino.h>
 #include <Wire.h>
+#include "MAX30105.h"
 #include "hrv.h"
+
+extern MAX30105 particleSensor;
 
 void setup() {
   Serial.begin(115200);
@@ -14,24 +17,23 @@ void setup() {
     while(1);
   }
 
-  Serial.println("Place finger or wrist on MAX30102 sensor.");
-  Serial.println("RR intervals and RMSSD will appear as beats are detected.");
+  Serial.println("Place finger firmly on MAX30102.");
+  Serial.println("Hold completely still for 60 seconds.");
+  Serial.println("RMSSD prints every 30 seconds.");
 }
 
 void loop() {
-  // Process PPG sample every loop iteration
-  // This must run as fast as possible for accurate beat detection
   hrv_process_sample();
 
-  // Every 10 seconds, print current RMSSD
   static long last_print = 0;
-  if (millis() - last_print > 10000) {
+  if (millis() - last_print > 30000) {
     last_print = millis();
     float rmssd = hrv_compute_rmssd();
     if (rmssd > 0) {
-      Serial.print("[HRV] Current RMSSD: ");
+      Serial.print("[HRV] RMSSD: ");
       Serial.print(rmssd);
-      Serial.println(" ms");
+      Serial.print(" ms  |  BPM: ");
+      Serial.println(hrv_get_bpm());
     } else {
       Serial.println("[HRV] Waiting for enough beats...");
     }
