@@ -6,8 +6,8 @@
 
 | Week | Dates | Focus | Status |
 |---|---|---|---|
-| Week 3 | Jul 21 - Jul 27 | Hardware verification + HRV + Temperature + OLED firmware | In Progress |
-| Week 4 | Jul 28 - Aug 03 | RT test + Clearance algorithm + State machine + BLE server | Upcoming |
+| Week 3 | Jul 21 - Jul 27 | Hardware verification + HRV + Temperature + OLED firmware | Done |
+| Week 4 | Jul 28 - Aug 03 | RT test + Clearance algorithm + State machine + BLE server | In Progress |
 | Week 5 | Aug 04 - Aug 10 | Firmware polish + Perfboard + React Native + BLE connection | Upcoming |
 | Week 6 | Aug 11 - Aug 17 | React Native screens + Demo preparation + Mid evaluation | Upcoming |
 | Week 7 | Aug 18 - Aug 24 | PostgreSQL local setup + FastAPI REST backend | Upcoming |
