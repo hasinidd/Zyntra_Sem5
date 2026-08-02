@@ -1,40 +1,28 @@
 #include <Arduino.h>
 #include <Wire.h>
-#include "oled_display.h"
+#include "reaction_test.h"
 
 void setup() {
   Serial.begin(115200);
   delay(1000);
   Wire.begin(21, 22);
 
-  Serial.println("=== Zyntra OLED Test ===");
+  Serial.println("=== Zyntra RT Test ===");
+  rt_init();
 
-  if (!oled_init()) {
-    Serial.println("OLED failed. Check wiring.");
-    while(1);
-  }
-
-  Serial.println("OLED initialised. Cycling through all 4 screens.");
+  Serial.println("RT test will begin in 3 seconds.");
+  Serial.println("Place finger near button — tap when you feel vibration.");
+  delay(3000);
 }
 
 void loop() {
-  // Screen 1 — Shift mode
-  Serial.println("Screen 1: Shift mode");
-  oled_show_shift_mode(42.5, true);
-  delay(3000);
+  uint16_t median = rt_run_test();
 
-  // Screen 2 — Recovery mode
-  Serial.println("Screen 2: Recovery mode");
-  oled_show_recovery(74.0, 1.2, 8);
-  delay(3000);
+  Serial.print("=== TEST COMPLETE. Median: ");
+  Serial.print(median);
+  Serial.print("ms. Status: ");
+  Serial.println(median < 500 ? "PASS" : "FAIL");
 
-  // Screen 3 — READY
-  Serial.println("Screen 3: READY");
-  oled_show_ready();
-  delay(3000);
-
-  // Screen 4 — NOT READY (HRV failed)
-  Serial.println("Screen 4: NOT READY");
-  oled_show_not_ready(false, true, true, 5);
-  delay(3000);
+  Serial.println("Waiting 5 seconds before next test...");
+  delay(5000);
 }
