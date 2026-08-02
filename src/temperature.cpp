@@ -16,6 +16,7 @@ bool temperature_init() {
     Serial.println("[TEMP] ERROR: MLX90614 not found on I2C bus");
     return false;
   }
+  delay(1000); // Allow sensor to fully stabilise before first reading
   Serial.println("[TEMP] MLX90614 initialised successfully");
   Serial.print("[TEMP] Ambient temp: ");
   Serial.print(mlx.readAmbientTempC());
@@ -27,8 +28,8 @@ bool temperature_init() {
 }
 
 // ── Capture baseline at shift start ───────────────────────────────────────
-// We take 5 readings spaced 30 seconds apart and average them
-// This gives a stable baseline unaffected by a single noisy reading
+// Takes 5 readings spaced 30 seconds apart and averages them
+// Worker must be sitting still and resting during this time
 void temperature_capture_baseline() {
   Serial.println("[TEMP] Capturing baseline — sit still for 2.5 minutes...");
   float total = 0.0;
@@ -54,6 +55,15 @@ void temperature_capture_baseline() {
   Serial.println(" C");
 }
 
+// ── Manually set baseline ─────────────────────────────────────────────────
+// Used for testing without full baseline capture
+void temperature_set_baseline(float value) {
+  baseline_temp = value;
+  Serial.print("[TEMP] Baseline manually set to: ");
+  Serial.print(value);
+  Serial.println(" C");
+}
+
 // ── Read current wrist temperature ────────────────────────────────────────
 float temperature_read() {
   return mlx.readObjectTempC();
@@ -65,7 +75,6 @@ float temperature_get_baseline() {
 }
 
 // ── Check if temperature has recovered ───────────────────────────────────
-// Returns true when current temp is within 0.8C of baseline
 bool temperature_is_cleared() {
   float current = mlx.readObjectTempC();
   float deviation = abs(current - baseline_temp);

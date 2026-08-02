@@ -8,9 +8,12 @@
 bool temperature_init();
 
 // Capture baseline temperature at shift start
-// Takes 5 readings over 2 minutes and averages them
+// Takes 5 readings over 2.5 minutes and averages them
 // Call this once when the worker first puts on the device
 void temperature_capture_baseline();
+
+// Manually set baseline to a specific value (used for testing)
+void temperature_set_baseline(float value);
 
 // Read current wrist skin temperature in Celsius
 float temperature_read();
