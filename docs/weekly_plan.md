@@ -4,26 +4,29 @@
 
 ## Overview
 
-| Week | Dates | Focus | Status |
-|---|---|---|---|
-| Week 3 | Jul 21 - Jul 27 | Hardware verification + HRV + Temperature + OLED firmware | Done |
-| Week 4 | Jul 28 - Aug 03 | RT test + Clearance algorithm + State machine + BLE server | In Progress |
-| Week 5 | Aug 04 - Aug 10 | Firmware polish + Perfboard + React Native + BLE connection | Upcoming |
-| Week 6 | Aug 11 - Aug 17 | React Native screens + Demo preparation + Mid evaluation | Upcoming |
-| Week 7 | Aug 18 - Aug 24 | PostgreSQL local setup + FastAPI REST backend | Upcoming |
-| Week 8 | Aug 25 - Aug 31 | AWS account setup + RDS PostgreSQL cloud migration | Upcoming |
-| Week 9 | Sep 01 - Sep 07 | AWS Lambda + API Gateway + SNS push notifications | Upcoming |
-| Week 10 | Sep 08 - Sep 14 | Sensor calibration + Validation sessions 1-5 | Upcoming |
-| Week 11 | Sep 15 - Sep 21 | Validation sessions 6-15 + Results analysis | Upcoming |
-| Week 12 | Sep 22 - Sep 28 | System hardening + Battery test + Project report + Demo video | Upcoming |
-| Week 13 | Sep 29 - Oct 05 | Final rehearsal + Final evaluation | Upcoming |
+| Week | Focus | Status |
+|---|---|---|
+| Week 1 | Hardware verification + HRV + Temperature + OLED firmware | Done |
+| Week 2 | React Native screens + Demo preparation + Mid evaluation | Done |
+| Week 3 | RT test + Clearance algorithm | Done |
+| Week 4 | Expo project setup + Android build pivot | Done |
+| Week 5 | React Native UI (Recovery + Clearance screens) + BLE integration on app side | Done |
+| Week 6 | AWS account setup + IAM + CLI | Done |
+| Week 7 | Firmware polish + Perfboard assembly | Upcoming |
+| Week 8 | State machine + BLE GATT server (firmware side) | In Progress |
+| Week 9 | PostgreSQL local setup + FastAPI REST backend | Upcoming |
+| Week 10 | RDS PostgreSQL cloud migration | Upcoming |
+| Week 11 | AWS Lambda + API Gateway + SNS push notifications | Upcoming |
+| Week 12 | Sensor calibration + Validation sessions | Upcoming |
+| Week 13 | System hardening + Battery test + Project report + Demo video | Upcoming |
+| Week 14 | Final rehearsal + Final evaluation | Upcoming |
 
 ---
 
 ## Weekly Progress
 
 <details>
-<summary><strong>Week 3 — Jul 21 to Jul 27 — Hardware Verification + Sensor Firmware</strong></summary>
+<summary><strong>Week 1 — Hardware Verification + Sensor Firmware</strong></summary>
 
 ### Slot 1 — Environment Setup and Hardware Verification
 **Status:** Done
@@ -37,125 +40,156 @@
 ---
 
 ### Slot 2 — HRV Module + Temperature Module + OLED Display
-**Status:** In Progress
+**Status:** Done
 
-- Configure MAX30102 for HRV-optimised mode (400Hz sample rate, 411us pulse width)
-- Implement beat detection using `checkForBeat()` to extract RR intervals from PPG signal
-- Compute RMSSD from a 2-minute sliding window of RR intervals
-- Implement MLX90614 baseline capture by averaging five readings taken 30 seconds apart
-- Implement temperature deviation check against the captured baseline
-- Build all four OLED screen layouts: shift mode, recovery progress, READY, NOT READY
-
-</details>
-
----
-
-<details>
-<summary><strong>Week 4 — Jul 28 to Aug 03 — RT Test + Clearance Algorithm + BLE</strong></summary>
-
-### Slot 3 — Reaction Time Test + AND-Gate Clearance Logic
-
-- Implement 5-stimulus vibration reaction time test with pseudo-random intervals between 3 and 8 seconds
-- Add false start detection — button presses under 100ms from stimulus onset are rejected and the stimulus is repeated
-- Add timeout handling — no response within 2000ms is recorded as a failed trial
-- Compute median reaction time from 5 valid responses
-- Implement AND-gate clearance logic: HRV passes AND temperature passes AND reaction time passes equals CLEARED
-- Implement linear regression time-to-clearance estimate displayed on NOT READY screen
-
----
-
-### Slot 4 — State Machine + BLE GATT Server
-
-- Implement five-state machine: BASELINE, SHIFT, RECOVERY, RT_TEST, CLEARED / NOT_CLEARED
-- Implement BLE GATT server with custom Service UUID and Characteristic UUID
-- Broadcast JSON payload on every 60-second recovery progress update and on every clearance verdict
-- Verify BLE advertisement using nRF Connect app on phone
+- Configured MAX30102 for HRV-optimised mode (LED brightness 50, 100Hz sample rate, 411us pulse width — calibrated empirically)
+- Implemented beat detection using `checkForBeat()` to extract RR intervals from PPG signal
+- Computed RMSSD from a sliding window of up to 140 RR intervals
+- Implemented MLX90614 baseline capture and temperature deviation check
+- Built all OLED screen layouts: shift mode, recovery progress, READY, NOT READY, sensor error, signal-lost warning, countdown
 
 </details>
 
 ---
 
 <details>
-<summary><strong>Week 5 — Aug 04 to Aug 10 — Firmware Polish + React Native App</strong></summary>
+<summary><strong>Week 2 — Mid Evaluation</strong></summary>
 
-### Slot 5 — Firmware Polish + Perfboard Assembly
+### Slot 3 — Demo Preparation
+**Status:** Done
 
-- Add signal quality check — display adjustment prompt on OLED when IR value falls below 50000
-- Add RR interval artifact filtering — reject intervals deviating more than 20% from the previous
-- Add time-to-clearance estimate on NOT READY screen using recovery curve projection
+- Presented mid evaluation using confirmed hardcoded-baseline clearance results (READY / NOT READY verdicts on physical hardware)
+- Demonstrated live hardware: sensor readings, tri-modal AND-gate algorithm, and OLED verdict display
+
+---
+
+### Mid Evaluation
+**Status:** Completed
+
+**Scope presented:** ESP32 wristband hardware and firmware, with the tri-modal clearance algorithm (HRV, skin temperature, reaction time) demonstrated live using pre-set baseline values.
+
+</details>
+
+---
+
+<details>
+<summary><strong>Week 3 — RT Test + Clearance Algorithm</strong></summary>
+
+### Slot 4 — Reaction Time Test + AND-Gate Clearance Logic
+**Status:** Done
+
+- Implemented 5-stimulus vibration reaction time test with pseudo-random intervals between 3 and 8 seconds
+- Added false start detection (responses under 100ms rejected and repeated)
+- Added timeout handling (no response within 2000ms recorded as failed trial)
+- Computed median reaction time from 5 valid responses
+- Implemented AND-gate clearance logic combining HRV, temperature, and reaction time
+- Added three-state HRV handling (PASS / FAIL / INSUFFICIENT DATA) to distinguish sensor errors from genuine physiological failure
+- Implemented linear regression time-to-clearance estimate on NOT READY screen
+- **Confirmed on physical hardware:** both READY (HRV 165.73ms PASS, Temp 0.20°C PASS, RT 379ms PASS) and NOT READY (HRV 67.30ms FAIL, Temp 0.40°C PASS, RT 346ms PASS) verdicts reproduced successfully
+
+</details>
+
+---
+
+<details>
+<summary><strong>Week 4 — Expo Project Setup + Android Build Pivot</strong></summary>
+
+### Slot 5 — React Native (Expo) Project Setup
+**Status:** Done
+
+- Created Expo project `ZyntraApp` and installed `react-native-ble-plx`
+- Configured EAS Build for development builds
+- **Pivot:** initial plan targeted iPhone via EAS Build, but this required Apple Developer Program enrolment ($99/year) which was not budgeted for this project. Switched target device to an available Samsung Galaxy Tab S9 FE (Android), which requires no developer account for sideloading custom builds
+- Reconfigured EAS Build for Android platform and generated a remote Android keystore for app signing
+
+</details>
+
+---
+
+<details>
+<summary><strong>Week 5 — React Native UI + BLE Integration (App Side)</strong></summary>
+
+### Slot 6 — Recovery Screen + Clearance Result Screen + BLE Client
+**Status:** Done
+
+- Built RecoveryScreen with live progress display
+- Built ClearanceResultScreen showing READY / NOT READY
+- Integrated `react-native-ble-plx` on the Android development build to scan, connect, and receive BLE notification data
+
+</details>
+
+---
+
+<details>
+<summary><strong>Week 6 — AWS Account, IAM, and CLI Setup</strong></summary>
+
+### Slot 7 — AWS Account, IAM, and CLI Setup
+**Status:** Done
+
+- Installed AWS CLI v2 and configured authentication
+- Created dedicated non-root IAM user `zyntra-dev` with `PowerUserAccess` policy (application development access without IAM administration, billing, or root-level permissions)
+- Verified `zyntra-dev` permissions boundary via `aws sts get-caller-identity` and confirmed `AccessDenied` protection on IAM administrative actions
+- Configured local AWS CLI profile `zyntra-dev` in region `ap-south-1`
+
+</details>
+
+---
+
+<details>
+<summary><strong>Week 7 — Firmware Polish + Perfboard Assembly</strong></summary>
+
+### Slot 8 — Firmware Polish + Perfboard Assembly
+**Status:** Upcoming
+
+- Add signal quality check improvements
+- Add further RR interval artifact filtering refinement
 - Solder all components from breadboard to perfboard for a stable permanent build
 - Run passive current draw test to verify 12-hour battery life target
 
+</details>
+
 ---
 
-### Slot 6 — React Native Project Setup + BLE Connection
+<details>
+<summary><strong>Week 8 — State Machine + BLE GATT Server (Firmware Side)</strong></summary>
 
-- Initialise React Native project
-- Install `react-native-ble-plx` and configure Android Bluetooth permissions
-- Implement BleService.js — scan, connect, discover GATT services, subscribe to notifications, decode JSON
-- Build RecoveryScreen with three animated progress bars updating every 60 seconds from BLE notifications
+### Slot 9 — State Machine + BLE GATT Server
+**Status:** In Progress
+
+- Implemented six-state machine in code: BASELINE, SHIFT, RECOVERY, CLEARANCE, CLEARED, NOT_CLEARED
+- Implemented `config.h` centralising all pin definitions and thresholds
+- Implemented `hrv_reset_buffer()` for clean state transitions
+- Implemented full BLE GATT server (`ble_service.h/cpp`) with custom Service UUID and Characteristic UUID, supporting both notify (device to phone) and write (phone to device) for hybrid break-trigger logic
+- **Not yet completed:** upload and hardware verification of the full state machine on the ESP32; BLE advertisement has not yet been confirmed via nRF Connect
 
 </details>
 
 ---
 
 <details>
-<summary><strong>Week 6 — Aug 11 to Aug 17 — Mid Evaluation</strong></summary>
+<summary><strong>Week 9 — PostgreSQL Local Setup + FastAPI REST Backend</strong></summary>
 
-### Slot 7 — Complete App Screens + Demo Preparation
-
-- Build ClearanceResultScreen showing READY or NOT READY with per-signal pass/fail indicators
-- Build DashboardScreen showing worker status with colour-coded state
-- Run full end-to-end rehearsal at least three times
-- Test both READY and NOT READY scenarios on OLED and phone simultaneously
-- Record backup demonstration video
-
----
-
-### Mid Evaluation — 17 August 2026
-
-**Scope:** Complete hardware prototype with firmware and React Native supervisor app connected via BLE. Full clearance protocol demonstrated live — baseline capture, recovery monitoring, reaction time test, and clearance verdict on both OLED and phone. Cloud backend not required at this stage.
-
-</details>
-
----
-
-<details>
-<summary><strong>Week 7 — Aug 18 to Aug 24 — PostgreSQL + FastAPI Backend</strong></summary>
-
-### Slot 8 — Local PostgreSQL Setup
+### Slot 10 — PostgreSQL Local Setup + FastAPI REST Backend
+**Status:** Upcoming
 
 - Install PostgreSQL via Docker
 - Design and create three tables: `workers`, `shift_baselines`, `clearance_events`
-- Verify table relationships and constraints using psql
-
----
-
-### Slot 9 — FastAPI REST API
-
-- Implement five REST endpoints: POST /workers, POST /clearance-events, GET /workers/:id/events, GET /events/summary, GET /clearance-events/latest
+- Implement five REST endpoints in FastAPI
 - Test all endpoints with curl
-- Connect React Native ApiService.js to local FastAPI and confirm clearance events save to PostgreSQL
+- Connect React Native app to local FastAPI
 
 </details>
 
 ---
 
 <details>
-<summary><strong>Week 8 — Aug 25 to Aug 31 — AWS Setup + RDS PostgreSQL</strong></summary>
-
-### Slot 10 — AWS Account and RDS Instance
-
-- Create AWS account and configure IAM user with programmatic access
-- Install and configure AWS CLI
-- Create RDS PostgreSQL instance on free tier (db.t3.micro)
-
----
+<summary><strong>Week 10 — RDS Migration</strong></summary>
 
 ### Slot 11 — Schema Migration to RDS
+**Status:** Upcoming
 
-- Export local schema using `pg_dump --schema-only`
-- Import schema to RDS instance
+- Create RDS PostgreSQL instance on free tier (db.t3.micro) under `zyntra-dev` IAM user
+- Export local schema using `pg_dump --schema-only` and import to RDS
 - Update FastAPI `DATABASE_URL` to RDS endpoint
 - Confirm full data flow from React Native through FastAPI into AWS RDS
 
@@ -164,21 +198,15 @@
 ---
 
 <details>
-<summary><strong>Week 9 — Sep 01 to Sep 07 — Lambda + API Gateway + SNS</strong></summary>
+<summary><strong>Week 11 — Lambda + API Gateway + SNS</strong></summary>
 
-### Slot 12 — AWS Lambda and API Gateway Deployment
+### Slot 12 — Lambda, API Gateway, and SNS
+**Status:** Upcoming
 
 - Add Mangum adapter to make FastAPI Lambda-compatible
 - Package and deploy backend to AWS Lambda
 - Create API Gateway REST routes pointing to Lambda functions
-- Update React Native to call the live API Gateway URL
-
----
-
-### Slot 13 — SNS Push Notifications + Audit Log Screen
-
 - Create SNS topic and configure Lambda to trigger on NOT READY events
-- Subscribe supervisor device to SNS topic
 - Build AuditLogScreen in React Native with full event history and CSV export
 
 </details>
@@ -186,9 +214,9 @@
 ---
 
 <details>
-<summary><strong>Week 10 — Sep 08 to Sep 14 — Sensor Calibration + Validation Begins</strong></summary>
+<summary><strong>Week 12 — Sensor Calibration + Validation Begins</strong></summary>
 
-### Slot 14 — Sensor Calibration
+### Slot 13 — Sensor Calibration
 
 - Compare MAX30102 RMSSD against Elite HRV reference app across 10 paired measurements
 - Compare MLX90614 readings against a medical infrared thermometer across 10 paired readings
@@ -196,7 +224,7 @@
 
 ---
 
-### Slot 15 — Validation Sessions 1 to 5 (Volunteer 1)
+### Slot 14 — Validation Sessions 1 to 5 (Volunteer 1)
 
 - Run treadmill fatigue protocol with Volunteer 1 across 5 sessions on separate days
 - Each session: 3-minute baseline rest, 20-minute treadmill at 80% max heart rate, 15-minute monitored break, simultaneous Zyntra clearance test and PVT at break end
@@ -207,30 +235,9 @@
 ---
 
 <details>
-<summary><strong>Week 11 — Sep 15 to Sep 21 — Complete Validation + Analysis</strong></summary>
+<summary><strong>Week 13 — Hardening + Report + Demo Video</strong></summary>
 
-### Slot 16 — Validation Sessions 6 to 15 (Volunteers 2 and 3)
-
-- Run identical protocol with Volunteer 2 (5 sessions) and Volunteer 3 (5 sessions)
-- Maintain consistent treadmill speed, break duration, and PVT administration across all sessions
-
----
-
-### Slot 17 — Results Analysis
-
-- Run `compute_metrics.py` on the 15-session CSV dataset
-- Compute sensitivity, specificity, accuracy, PPV, and NPV against PVT ground truth
-- Generate confusion matrix
-- Plot HRV and temperature recovery curves across sessions
-
-</details>
-
----
-
-<details>
-<summary><strong>Week 12 — Sep 22 to Sep 28 — Hardening + Report + Demo Video</strong></summary>
-
-### Slot 18 — System Hardening and Battery Test
+### Slot 15 — System Hardening and Battery Test
 
 - Run 12-hour continuous battery life test with all sensors active and BLE advertising
 - Assemble final wristband housing
@@ -239,7 +246,7 @@
 
 ---
 
-### Slot 19 — Project Report and Demo Video
+### Slot 16 — Project Report and Demo Video
 
 - Record clean 5-minute demonstration video covering the complete system flow
 - Write full project report covering problem statement, system design, firmware architecture, mobile app, cloud backend, validation methodology, results, limitations, and future work
@@ -250,9 +257,9 @@
 ---
 
 <details>
-<summary><strong>Week 13 — Sep 29 to Oct 05 — Final Evaluation</strong></summary>
+<summary><strong>Week 14 — Final Evaluation</strong></summary>
 
-### Slot 20 — Final Rehearsal
+### Slot 17 — Final Rehearsal
 
 - Run complete end-to-end demonstration three times
 - Verify all GitHub commit messages are meaningful and wiki is up to date
@@ -260,7 +267,7 @@
 
 ---
 
-### Final Evaluation — 5 October 2026
+### Final Evaluation
 
 **Scope:** Complete Zyntra system demonstrated end to end — ESP32 wristband, React Native supervisor app, AWS cloud backend (API Gateway, Lambda, RDS PostgreSQL, SNS), and validation results from 15 sessions with computed sensitivity and specificity against the PVT gold standard.
 
