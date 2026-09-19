@@ -1,0 +1,88 @@
+export type DeviceState =
+  | 'DISCONNECTED'
+  | 'BASELINE'
+  | 'SHIFT'
+  | 'RECOVERY'
+  | 'CLEARANCE'
+  | 'CLEARED'
+  | 'NOT_CLEARED';
+
+export interface LiveVitals {
+  rmssd: number | null;
+  hrvBaseline: number;
+  skinTempC: number | null;
+  tempBaselineC: number;
+  secondsRemaining: number;
+}
+
+export interface ClearanceResult {
+  hrvDataValid: boolean;
+  cleared: boolean;
+  hrvPass: boolean;
+  tempPass: boolean;
+  rtPass: boolean;
+  rmssd: number | null;
+  tempDeltaC: number | null;
+  medianRtMs: number | null;
+  minutesToClearance: number;
+}
+
+export interface BreakSlot {
+  id: string;
+  label: string;
+  startHHMM: string;
+  durationMin: number;
+}
+
+// ── Gym study types ────────────────────────────────────────────────────────
+
+export interface BaselineData {
+  hrvRmssd: number;      // ms
+  tempC: number;         // °C
+  rtMedianMs: number;    // ms
+  capturedAt: string;    // ISO timestamp
+}
+
+export interface TestResult {
+  id: string;
+  timestamp: string;     // ISO
+  cleared: boolean;
+  hrvDataValid: boolean;
+  hrvPass: boolean;
+  tempPass: boolean;
+  rtPass: boolean;
+  rmssd: number | null;
+  tempDeltaC: number | null;
+  medianRtMs: number | null;
+  minutesToClearance: number;
+}
+
+export interface GymUser {
+  id: string;
+  name: string;
+  age: number;
+  heightCm: number;
+  weightKg: number;
+  role: string;           // e.g. "Gym member", "Athlete"
+  createdAt: string;      // ISO
+  baseline: BaselineData | null;
+  testResults: TestResult[];
+}
+
+export interface ZyntraLink {
+  connect(serverHost?: string): Promise<void>;
+  disconnect(): Promise<void>;
+  triggerBaseline(): void;
+  triggerBreak(): void;
+  acknowledgeResult(): void;
+  onStateChange(cb: (s: DeviceState) => void): () => void;
+  onVitals(cb: (v: LiveVitals) => void): () => void;
+  onBaseline(cb: (b: BaselineData) => void): () => void;
+  onResult(cb: (r: ClearanceResult) => void): () => void;
+}
+
+export interface AuthUser {
+  name: string;
+  email: string;
+  photoUrl: string | null;
+}

@@ -1,1 +1,14 @@
-.pio
+# Dependencies
+node_modules/
+
+# Build outputs & cache
+.pio/
+.expo/
+dist/
+web-build/
+*.tsbuildinfo
+
+# Environment & Local
+.env*
+.DS_Store
+Thumbs.db
