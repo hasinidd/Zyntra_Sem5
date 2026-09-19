@@ -17,9 +17,9 @@ static float baseline_rmssd = 0.0;
 // ── Custom wrist peak detector ────────────────────────────────────────────
 // Tuned for wrist PPG pulse range ~300 counts on 141000 baseline
 #define PEAK_WINDOW    200    // ~2 seconds at 100Hz
-#define PEAK_THRESHOLD 0.55   // 55% of min-max range
+#define PEAK_THRESHOLD 0.70   // 70% of min-max range (ignores dicrotic notch)
 #define MIN_RANGE      100    // minimum signal range
-#define MIN_RR_MS      500    // minimum 500ms between beats (max 120 BPM)
+#define MIN_RR_MS      600    // minimum 600ms between beats (max 100 BPM at rest)
 
 static long ir_buffer[PEAK_WINDOW];
 static int  buf_idx       = 0;
@@ -92,11 +92,11 @@ void hrv_process_sample() {
     last_beat_time = now;
 
     if (rr > 450 && rr < 1500) {
-      // Loose artifact rejection for wrist — 90%
+      // Tightened artifact rejection for wrist — 25%
       if (rr_count > 0) {
         float prev_rr = rr_intervals[rr_count - 1];
         float diff_pct = abs(rr - prev_rr) / prev_rr;
-        if (diff_pct > 0.90) {
+        if (diff_pct > 0.25) {
           Serial.println("[HRV] Artifact — skipping");
           return;
         }
