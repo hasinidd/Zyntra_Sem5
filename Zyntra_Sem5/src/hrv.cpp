@@ -17,9 +17,9 @@ static float baseline_rmssd = 0.0;
 // ── Custom wrist peak detector ────────────────────────────────────────────
 // Tuned for wrist PPG pulse range ~300 counts on 141000 baseline
 #define PEAK_WINDOW    200    // ~2 seconds at 100Hz
-#define PEAK_THRESHOLD 0.70   // 70% of min-max range (ignores dicrotic notch)
+#define PEAK_THRESHOLD 0.62   // 62% of min-max range (ignores dicrotic notch)
 #define MIN_RANGE      100    // minimum signal range
-#define MIN_RR_MS      600    // minimum 600ms between beats (max 100 BPM at rest)
+#define MIN_RR_MS      550    // minimum 550ms between beats (max 109 BPM)
 
 static long ir_buffer[PEAK_WINDOW];
 static int  buf_idx       = 0;
@@ -91,12 +91,12 @@ void hrv_process_sample() {
     uint16_t rr = (uint16_t)(now - last_beat_time);
     last_beat_time = now;
 
-    if (rr > 450 && rr < 1500) {
-      // Tightened artifact rejection for wrist — 25%
+    if (rr >= 500 && rr <= 1400) {
+      // Optimized artifact rejection for wrist — 65%
       if (rr_count > 0) {
         float prev_rr = rr_intervals[rr_count - 1];
         float diff_pct = abs(rr - prev_rr) / prev_rr;
-        if (diff_pct > 0.25) {
+        if (diff_pct > 0.65) {
           Serial.println("[HRV] Artifact — skipping");
           return;
         }
@@ -130,12 +130,19 @@ float hrv_compute_rmssd() {
   int valid_pairs = 0;
 
   for (int i = start + 1; i < rr_count; i++) {
-    float diff = (float)rr_intervals[i] - (float)rr_intervals[i - 1];
+    float diff = abs((float)rr_intervals[i] - (float)rr_intervals[i - 1]);
+    
+    // Outlier filter: Natural resting HRV differences are < 180ms.
+    // Any pair jump > 180ms is an extreme motion/sensor spike and is discarded.
+    if (diff > 180.0) {
+      continue;
+    }
+
     sum_sq_diff += diff * diff;
     valid_pairs++;
   }
 
-  if (valid_pairs == 0) return -1.0;
+  if (valid_pairs < 2) return -1.0;
   return sqrt(sum_sq_diff / valid_pairs);
 }
 

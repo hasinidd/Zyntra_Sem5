@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  Alert, FlatList, Pressable, ScrollView,
+  Alert, FlatList, Platform, Pressable, ScrollView,
   StyleSheet, Text, TextInput, View,
 } from 'react-native';
 import { useZyntra } from '../../services/ZyntraContext';
@@ -51,14 +51,20 @@ export default function UsersTab() {
   };
 
   const handleDelete = (userId: string, userName: string) => {
-    Alert.alert(
-      'Delete user',
-      `Remove ${userName} and all their test data?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => deleteUser(userId) },
-      ]
-    );
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined' && window.confirm(`Delete ${userName} and all recorded data?`)) {
+        deleteUser(userId);
+      }
+    } else {
+      Alert.alert(
+        'Delete participant',
+        `Remove ${userName} and all their test data?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Delete', style: 'destructive', onPress: () => deleteUser(userId) },
+        ]
+      );
+    }
   };
 
   return (
@@ -131,7 +137,13 @@ export default function UsersTab() {
             {/* Actions */}
             <View style={styles.actions}>
               <Text style={styles.goText}>Test →</Text>
-              <Pressable onPress={() => handleDelete(item.id, item.name)} hitSlop={10}>
+              <Pressable
+                onPress={(e) => {
+                  e.stopPropagation();
+                  handleDelete(item.id, item.name);
+                }}
+                hitSlop={10}
+              >
                 <Text style={styles.deleteText}>Delete</Text>
               </Pressable>
             </View>

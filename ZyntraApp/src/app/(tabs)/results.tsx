@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  FlatList, Pressable,
+  Alert, FlatList, Platform, Pressable,
   StyleSheet, Text, View,
 } from 'react-native';
 import { useZyntra } from '../../services/ZyntraContext';
@@ -8,7 +8,7 @@ import { GymUser, TestResult } from '../../services/types';
 import { colors, radius } from '../../theme';
 
 export default function ResultsTab() {
-  const { users, selectedUser } = useZyntra();
+  const { users, selectedUser, deleteUser } = useZyntra();
   const [expandedUser, setExpandedUser] = useState<string | null>(
     selectedUser?.id ?? null
   );
@@ -33,18 +33,37 @@ export default function ResultsTab() {
           user={item}
           expanded={expandedUser === item.id}
           onToggle={() => setExpandedUser(prev => prev === item.id ? null : item.id)}
+          onDelete={() => deleteUser(item.id)}
         />
       )}
     />
   );
 }
 
-function UserResultCard({ user, expanded, onToggle }: {
+function UserResultCard({ user, expanded, onToggle, onDelete }: {
   user: GymUser;
   expanded: boolean;
   onToggle: () => void;
+  onDelete: () => void;
 }) {
   const latest = user.testResults[0];
+
+  const handleDelete = () => {
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined' && window.confirm(`Remove ${user.name} and all recorded test data?`)) {
+        onDelete();
+      }
+    } else {
+      Alert.alert(
+        'Delete participant',
+        `Remove ${user.name} and all recorded test data?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Delete', style: 'destructive', onPress: onDelete },
+        ]
+      );
+    }
+  };
 
   return (
     <View style={styles.card}>
@@ -113,6 +132,11 @@ function UserResultCard({ user, expanded, onToggle }: {
               ))}
             </View>
           )}
+
+          {/* Delete User Option */}
+          <Pressable style={styles.deleteUserBtn} onPress={handleDelete}>
+            <Text style={styles.deleteUserText}>Remove participant profile</Text>
+          </Pressable>
         </View>
       )}
     </View>
@@ -208,6 +232,8 @@ const styles = StyleSheet.create({
   smallBadge:     { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
   smallBadgeText: { fontSize: 10, fontWeight: '800' },
   noData:         { color: colors.textMuted, fontSize: 13, fontStyle: 'italic' },
+  deleteUserBtn:  { marginTop: 4, paddingVertical: 8, alignItems: 'center', borderWidth: 1, borderColor: colors.notReady + '44', borderRadius: 8 },
+  deleteUserText: { color: colors.notReady, fontSize: 12, fontWeight: '600' },
 });
 
 const sigStyles = StyleSheet.create({
