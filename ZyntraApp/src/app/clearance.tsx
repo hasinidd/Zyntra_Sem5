@@ -44,6 +44,17 @@ export default function Clearance() {
       ? 'All 3 physiological signals passed baseline comparison.'
       : `These signals failed: ${failedList.join(', ')}`;
 
+  let displayTempDelta = '—';
+  if (result.tempDeltaC != null) {
+    let deltaVal = result.tempDeltaC;
+    if (deltaVal > 5.0 && selectedUser?.baseline) {
+      deltaVal = Number(Math.abs(deltaVal - selectedUser.baseline.tempC).toFixed(1));
+    } else {
+      deltaVal = Number(deltaVal.toFixed(1));
+    }
+    displayTempDelta = `Δ${deltaVal}°C`;
+  }
+
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
 
@@ -71,7 +82,7 @@ export default function Clearance() {
         />
         <ValueBox
           label="TEMP Δ"
-          value={result.tempDeltaC != null ? `${result.tempDeltaC.toFixed(1)} °C` : '—'}
+          value={displayTempDelta}
           pass={result.tempPass}
         />
         <ValueBox
@@ -95,7 +106,7 @@ export default function Clearance() {
 
         <SignalRow
           name="Skin Temperature"
-          detail={result.tempDeltaC != null ? `Deviation: Δ ${result.tempDeltaC.toFixed(1)} °C (Threshold ≤ 0.8 °C)` : '—'}
+          detail={displayTempDelta !== '—' ? `Deviation: ${displayTempDelta} (Threshold ≤ 0.8 °C)` : '—'}
           pass={result.tempPass}
         />
         <View style={styles.divider} />

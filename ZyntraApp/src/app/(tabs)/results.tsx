@@ -3,7 +3,7 @@ import {
   Alert, FlatList, Platform, Pressable,
   StyleSheet, Text, View,
 } from 'react-native';
-import { useZyntra } from '../../services/ZyntraContext';
+import { getRtThresholdForAge, getTempMarginForAge, useZyntra } from '../../services/ZyntraContext';
 import { GymUser, TestResult } from '../../services/types';
 import { colors, radius } from '../../theme';
 
@@ -117,7 +117,7 @@ function UserResultCard({ user, expanded, onToggle, onDelete }: {
           {latest && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>LATEST RECOVERY TEST</Text>
-              <ResultRow result={latest} userName={user.name} />
+              <ResultRow result={latest} user={user} />
             </View>
           )}
 
@@ -127,7 +127,7 @@ function UserResultCard({ user, expanded, onToggle, onDelete }: {
               <Text style={styles.sectionTitle}>TEST HISTORY ({user.testResults.length} sessions)</Text>
               {user.testResults.map((r, i) => (
                 <View key={r.id}>
-                  {i > 0 && <ResultRow result={r} userName={user.name} compact />}
+                  {i > 0 && <ResultRow result={r} user={user} compact />}
                 </View>
               ))}
             </View>
@@ -143,12 +143,45 @@ function UserResultCard({ user, expanded, onToggle, onDelete }: {
   );
 }
 
-function ResultRow({ result, userName, compact = false }: { result: TestResult; userName: string; compact?: boolean }) {
+function ResultRow({ result, user, compact = false }: {
+  result: TestResult;
+  user: GymUser;
+  compact?: boolean;
+}) {
   const sensorError = !result.hrvDataValid;
+  const rtThreshold = getRtThresholdForAge(user.age);
+  const tempMargin  = getTempMarginForAge(user.age);
+
+  let tempDeltaDisplay = '—';
+  let tempDeltaVal = result.tempDeltaC;
+  if (tempDeltaVal !== null) {
+    if (tempDeltaVal > 5.0 && user.baseline) {
+      tempDeltaVal = Number(Math.abs(tempDeltaVal - user.baseline.tempC).toFixed(1));
+    } else {
+      tempDeltaVal = Number(tempDeltaVal.toFixed(1));
+    }
+    tempDeltaDisplay = `Δ${tempDeltaVal}°C`;
+  }
+
+  // Dynamic pass flags according to age bracket & personal baseline
+  const hrvPass = (result.rmssd !== null && user.baseline)
+    ? (result.rmssd >= 0.9 * user.baseline.hrvRmssd)
+    : result.hrvPass;
+
+  const tempPass = (tempDeltaVal !== null)
+    ? (tempDeltaVal <= tempMargin)
+    : result.tempPass;
+
+  const rtPass = (result.medianRtMs !== null)
+    ? (result.medianRtMs < rtThreshold)
+    : result.rtPass;
+
+  const cleared = !sensorError && hrvPass && tempPass && rtPass;
+
   const verdictColor = sensorError ? colors.warn :
-    result.cleared ? colors.ready : colors.notReady;
+    cleared ? colors.ready : colors.notReady;
   const verdictText = sensorError ? 'DATA ERROR' :
-    result.cleared ? `${userName} is ready` : `${userName} is not ready`;
+    cleared ? `${user.name} is ready` : `${user.name} is not ready`;
 
   if (compact) {
     return (
@@ -165,11 +198,11 @@ function ResultRow({ result, userName, compact = false }: { result: TestResult; 
     <View style={styles.resultCard}>
       <Text style={[styles.verdict, { color: verdictColor }]}>{verdictText}</Text>
       <View style={styles.signalRow}>
-        <SignalBadge label="HRV" value={result.rmssd != null ? `${result.rmssd.toFixed(1)}ms` : '—'} pass={result.hrvPass} invalid={sensorError} />
-        <SignalBadge label="TEMP" value={result.tempDeltaC != null ? `Δ${result.tempDeltaC.toFixed(1)}°C` : '—'} pass={result.tempPass} />
-        <SignalBadge label="RT" value={result.medianRtMs != null ? `${result.medianRtMs}ms` : '—'} pass={result.rtPass} />
+        <SignalBadge label="HRV" value={result.rmssd != null ? `${result.rmssd.toFixed(1)}ms` : '—'} pass={hrvPass} invalid={sensorError} />
+        <SignalBadge label="TEMP" value={tempDeltaDisplay} pass={tempPass} />
+        <SignalBadge label="RT" value={result.medianRtMs != null ? `${result.medianRtMs}ms` : '—'} pass={rtPass} />
       </View>
-      {!result.cleared && !sensorError && (
+      {!cleared && !sensorError && (
         <Text style={styles.retestTime}>Required recovery time: {result.minutesToClearance} min</Text>
       )}
       <Text style={styles.timestamp}>{new Date(result.timestamp).toLocaleString()}</Text>

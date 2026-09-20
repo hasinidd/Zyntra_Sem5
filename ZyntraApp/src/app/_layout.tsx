@@ -7,18 +7,19 @@ import { colors } from '../theme';
 
 // Auth guard — watches the user object and redirects accordingly.
 function AuthGate() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
+    if (loading) return;
     const inAuthGroup = segments[0] === '(auth)';
     if (!user && !inAuthGroup) {
       router.replace('/(auth)/login');
     } else if (user && inAuthGroup) {
       router.replace('/(tabs)');
     }
-  }, [user, segments, router]);
+  }, [user, loading, segments, router]);
 
   return null;
 }

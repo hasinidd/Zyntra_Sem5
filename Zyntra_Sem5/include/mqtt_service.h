@@ -35,6 +35,9 @@ void mqtt_notify_result(const ClearanceResult& result);
 // Check if a command was received from app — returns command byte or 0
 uint8_t mqtt_get_command();
 
+// Get the age of the participant received from app
+uint8_t mqtt_get_participant_age();
+
 // Check if MQTT client is connected
 bool mqtt_is_connected();
 

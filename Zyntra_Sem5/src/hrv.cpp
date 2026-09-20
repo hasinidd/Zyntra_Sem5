@@ -169,6 +169,12 @@ void hrv_capture_baseline() {
 }
 
 float hrv_get_baseline()         { return baseline_rmssd; }
+void hrv_set_baseline(float value) {
+  baseline_rmssd = value;
+  Serial.print("[HRV] Baseline set from app: ");
+  Serial.print(value);
+  Serial.println(" ms");
+}
 float hrv_get_bpm()              { return current_bpm; }
 
 bool hrv_is_cleared() {

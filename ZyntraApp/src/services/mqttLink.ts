@@ -32,25 +32,43 @@ export class MqttZyntraLink implements ZyntraLink {
     const url = brokerUrl && brokerUrl.trim().length > 0 ? brokerUrl.trim() : DEFAULT_BROKER_URL;
     console.log('[MQTT] Connecting to broker:', url);
 
-    return new Promise((resolve, reject) => {
+    if (this.client) {
+      try { this.client.end(true); } catch {}
+      this.client = null;
+    }
+
+    return new Promise((resolve) => {
+      let settled = false;
+      const timeoutTimer = setTimeout(() => {
+        if (!settled) {
+          settled = true;
+          console.warn('[MQTT] Connection timeout — proceeding gracefully');
+          resolve();
+        }
+      }, 3000);
+
       try {
         this.client = mqtt.connect(url, {
           clientId: `Zyntra_App_${Math.random().toString(16).substring(2, 10)}`,
           keepalive: 60,
           reconnectPeriod: 3000,
-          connectTimeout: 15000,
+          connectTimeout: 5000,
         });
 
         this.client.on('connect', () => {
-          console.log('[MQTT] Connected to broker');
-          this._emitState('SHIFT');
+          if (!settled) {
+            settled = true;
+            clearTimeout(timeoutTimer);
+            console.log('[MQTT] Connected to broker');
+            this._emitState('SHIFT');
 
-          this.client?.subscribe(['zyntra/state', 'zyntra/vitals', 'zyntra/baseline', 'zyntra/result'], (err) => {
-            if (err) console.error('[MQTT] Subscription error:', err);
-            else console.log('[MQTT] Subscribed to zyntra/# topics');
-          });
+            this.client?.subscribe(['zyntra/state', 'zyntra/vitals', 'zyntra/baseline', 'zyntra/result'], (err) => {
+              if (err) console.error('[MQTT] Subscription error:', err);
+              else console.log('[MQTT] Subscribed to zyntra/# topics');
+            });
 
-          resolve();
+            resolve();
+          }
         });
 
         this.client.on('message', (topic, payload) => {
@@ -59,7 +77,11 @@ export class MqttZyntraLink implements ZyntraLink {
 
         this.client.on('error', (err) => {
           console.warn('[MQTT] Error:', err.message);
-          reject(err);
+          if (!settled) {
+            settled = true;
+            clearTimeout(timeoutTimer);
+            resolve();
+          }
         });
 
         this.client.on('close', () => {
@@ -67,8 +89,12 @@ export class MqttZyntraLink implements ZyntraLink {
           this._emitState('DISCONNECTED');
         });
 
-      } catch (e) {
-        reject(e);
+      } catch {
+        if (!settled) {
+          settled = true;
+          clearTimeout(timeoutTimer);
+          resolve();
+        }
       }
     });
   }
@@ -87,10 +113,16 @@ export class MqttZyntraLink implements ZyntraLink {
     this._publishCommand('START_BASELINE');
   }
 
-  triggerBreak(): void {
-    console.log('[MQTT] Sending START_RECOVERY to ESP32...');
+  triggerBreak(tempBaseline?: number, hrvBaseline?: number, userAge?: number): void {
+    console.log('[MQTT] Sending START_RECOVERY to ESP32 with baselines & age...', { tempBaseline, hrvBaseline, userAge });
     this._emitState('RECOVERY');
-    this._publishCommand('START_RECOVERY');
+    const payload = JSON.stringify({
+      command: 'START_RECOVERY',
+      tempBaseline: tempBaseline ?? 33.0,
+      hrvBaseline: hrvBaseline ?? 80.0,
+      userAge: userAge ?? 24,
+    });
+    this._publishCommand(payload);
   }
 
   acknowledgeResult(): void {

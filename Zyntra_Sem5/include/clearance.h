@@ -17,12 +17,15 @@ struct ClearanceResult {
   int minutes_to_clearance; // Estimated minutes until clearance
 };
 
-// Run the full clearance protocol
-// Checks all three signals and returns a ClearanceResult
-ClearanceResult clearance_run(float hrv_baseline, float temp_baseline);
+// Run the full clearance protocol with age-dependent thresholds
+ClearanceResult clearance_run(float hrv_baseline, float temp_baseline, uint8_t user_age = 24);
+
+// Age-dependent threshold helper functions
+uint16_t clearance_get_rt_threshold_for_age(uint8_t age);
+float clearance_get_temp_margin_for_age(uint8_t age);
 
 // Estimate minutes to clearance based on recovery curve
 int clearance_estimate_minutes(float hrv_current, float hrv_baseline,
-                                float temp_deviation);
+                                float temp_deviation, uint8_t user_age = 24);
 
 #endif

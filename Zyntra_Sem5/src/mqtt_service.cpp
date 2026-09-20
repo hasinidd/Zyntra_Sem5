@@ -1,5 +1,7 @@
 #include "mqtt_service.h"
 #include "config.h"
+#include "temperature.h"
+#include "hrv.h"
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
@@ -8,6 +10,7 @@ static WiFiClient espClient;
 static PubSubClient mqttClient(espClient);
 
 static uint8_t pendingCommand = 0;
+static uint8_t participantAge = 24; // Default age 24
 static uint32_t lastReconnectAttempt = 0;
 
 static const char* STATE_NAMES[] = {
@@ -16,8 +19,8 @@ static const char* STATE_NAMES[] = {
 
 // ── Callback for incoming MQTT messages ───────────────────────────────────
 static void mqttCallback(char* topic, byte* payload, unsigned int length) {
-  char message[64] = {0};
-  unsigned int copyLen = length < 63 ? length : 63;
+  char message[256] = {0};
+  unsigned int copyLen = length < 255 ? length : 255;
   memcpy(message, payload, copyLen);
   message[copyLen] = '\0';
 
@@ -33,10 +36,37 @@ static void mqttCallback(char* topic, byte* payload, unsigned int length) {
   } else if (strcmp(message, "ACK") == 0 || message[0] == '3' || payload[0] == 0x03) {
     pendingCommand = MQTT_CMD_ACK;
   } else {
-    StaticJsonDocument<128> doc;
+    StaticJsonDocument<256> doc;
     DeserializationError err = deserializeJson(doc, message, length);
-    if (!err && doc.containsKey("command")) {
-      pendingCommand = doc["command"].as<uint8_t>();
+    if (!err) {
+      if (doc.containsKey("command")) {
+        const char* cmdStr = doc["command"];
+        if (cmdStr && strcmp(cmdStr, "START_RECOVERY") == 0) {
+          pendingCommand = MQTT_CMD_START_RECOVERY;
+        } else if (cmdStr && strcmp(cmdStr, "START_BASELINE") == 0) {
+          pendingCommand = MQTT_CMD_START_BASELINE;
+        } else if (cmdStr && strcmp(cmdStr, "ACK") == 0) {
+          pendingCommand = MQTT_CMD_ACK;
+        } else if (doc["command"].is<uint8_t>()) {
+          pendingCommand = doc["command"].as<uint8_t>();
+        }
+      }
+
+      if (doc.containsKey("userAge")) {
+        participantAge = doc["userAge"].as<uint8_t>();
+        Serial.print("[MQTT] Participant age set from app: ");
+        Serial.println(participantAge);
+      }
+
+      if (doc.containsKey("tempBaseline")) {
+        float tb = doc["tempBaseline"].as<float>();
+        temperature_set_baseline(tb);
+      }
+
+      if (doc.containsKey("hrvBaseline")) {
+        float hb = doc["hrvBaseline"].as<float>();
+        hrv_set_baseline(hb);
+      }
     }
   }
 
@@ -189,6 +219,10 @@ uint8_t mqtt_get_command() {
   uint8_t cmd = pendingCommand;
   pendingCommand = 0;
   return cmd;
+}
+
+uint8_t mqtt_get_participant_age() {
+  return participantAge;
 }
 
 bool mqtt_is_connected() {

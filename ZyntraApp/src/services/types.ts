@@ -74,7 +74,7 @@ export interface ZyntraLink {
   connect(serverHost?: string): Promise<void>;
   disconnect(): Promise<void>;
   triggerBaseline(): void;
-  triggerBreak(): void;
+  triggerBreak(tempBaseline?: number, hrvBaseline?: number, userAge?: number): void;
   acknowledgeResult(): void;
   onStateChange(cb: (s: DeviceState) => void): () => void;
   onVitals(cb: (v: LiveVitals) => void): () => void;

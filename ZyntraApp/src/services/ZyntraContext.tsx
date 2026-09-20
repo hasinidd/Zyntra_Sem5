@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { MqttZyntraLink } from './mqttLink';
-import { loadUsers, updateUser } from './storage';
+import { loadUsers, updateUser, SEED_PARTICIPANTS } from './storage';
 import { BaselineData, ClearanceResult, DeviceState, GymUser, LiveVitals, TestResult, ZyntraLink } from './types';
 
 interface ZyntraStore {
@@ -31,10 +31,83 @@ interface ZyntraStore {
 
 const Ctx = createContext<ZyntraStore | null>(null);
 
-export function generateDefaultBaseline(): BaselineData {
-  const hrvRmssd = Number((30 + Math.random() * 50).toFixed(1)); // 30–80 ms
-  const tempC = Number((32 + Math.random() * 4).toFixed(1));      // 32–36 °C
-  const rtMedianMs = Math.floor(200 + Math.random() * 250);      // 200–450 ms
+export function getRtThresholdForAge(age: number = 24): number {
+  if (age <= 25) return 450;
+  if (age <= 35) return 480;
+  if (age <= 45) return 500;
+  if (age <= 55) return 530;
+  if (age <= 65) return 580;
+  return 650;
+}
+
+export function getTempMarginForAge(age: number = 24): number {
+  if (age > 45) return 0.6;
+  return 0.8;
+}
+
+export function calculateEstimateMinutes(
+  rmssd: number | null,
+  tempDeltaC: number | null,
+  userBaseline: BaselineData | null,
+  age: number = 24
+): number {
+  if (!userBaseline) return 0;
+  let maxEstimate = 0;
+
+  // 1. HRV Estimate: 3 min per 10% deficit (capped at 30 min)
+  if (rmssd !== null && rmssd > 0 && userBaseline.hrvRmssd > 0) {
+    const recoveryPct = rmssd / userBaseline.hrvRmssd;
+    if (recoveryPct < 0.90) {
+      const deficit = 0.90 - recoveryPct;
+      let hrvEstimate = Math.round(deficit * 100 * 3);
+      if (hrvEstimate > 30) hrvEstimate = 30;
+      maxEstimate = Math.max(maxEstimate, hrvEstimate);
+    }
+  }
+
+  // 2. Temp Estimate: 5 min per 0.5°C excess (capped at 20 min)
+  const tempMargin = getTempMarginForAge(age);
+  if (tempDeltaC !== null && tempDeltaC > tempMargin) {
+    const excess = tempDeltaC - tempMargin;
+    let tempEstimate = Math.round((excess / 0.5) * 5);
+    if (tempEstimate > 20) tempEstimate = 20;
+    maxEstimate = Math.max(maxEstimate, tempEstimate);
+  }
+
+  // 3. Realistic bounds: 5 min minimum if not cleared, 30 min max ceiling
+  if (maxEstimate < 5) maxEstimate = 5;
+  if (maxEstimate > 30) maxEstimate = 30;
+
+  return maxEstimate;
+}
+
+export function generateDefaultBaseline(age: number = 24): BaselineData {
+  let hrvMin = 38, hrvMax = 74;
+  let tempMin = 32.0, tempMax = 35.0;
+  let rtMin = 150, rtMax = 250;
+
+  if (age <= 24) {
+    hrvMin = 38; hrvMax = 74; tempMin = 32.0; tempMax = 35.0; rtMin = 150; rtMax = 250;
+  } else if (age <= 29) {
+    hrvMin = 35; hrvMax = 68; tempMin = 32.0; tempMax = 35.0; rtMin = 210; rtMax = 290;
+  } else if (age <= 34) {
+    hrvMin = 32; hrvMax = 63; tempMin = 32.0; tempMax = 35.0; rtMin = 210; rtMax = 290;
+  } else if (age <= 39) {
+    hrvMin = 28; hrvMax = 57; tempMin = 32.0; tempMax = 35.0; rtMin = 230; rtMax = 310;
+  } else if (age <= 44) {
+    hrvMin = 26; hrvMax = 51; tempMin = 32.0; tempMax = 35.0; rtMin = 230; rtMax = 310;
+  } else if (age <= 49) {
+    hrvMin = 21; hrvMax = 42; tempMin = 31.0; tempMax = 34.0; rtMin = 250; rtMax = 340;
+  } else if (age <= 59) {
+    hrvMin = 21; hrvMax = 42; tempMin = 31.0; tempMax = 34.0; rtMin = 275; rtMax = 375;
+  } else {
+    hrvMin = 16; hrvMax = 36; tempMin = 30.0; tempMax = 33.0; rtMin = 300; rtMax = 450;
+  }
+
+  const hrvRmssd = Number((hrvMin + Math.random() * (hrvMax - hrvMin)).toFixed(1));
+  const tempC    = Number((tempMin + Math.random() * (tempMax - tempMin)).toFixed(1));
+  const rtMedianMs = Math.floor(rtMin + Math.random() * (rtMax - rtMin));
+
   return {
     hrvRmssd,
     tempC,
@@ -57,14 +130,60 @@ export function ZyntraProvider({ children }: { children: React.ReactNode }) {
   // Load users from storage and auto-connect MQTT on mount
   useEffect(() => {
     loadUsers().then(async loaded => {
-      // Ensure all users have a baseline assigned
       let hasChanges = false;
+
       const verifiedUsers = loaded.map(u => {
-        if (!u.baseline) {
+        // If participant matches one of our 5 gym seed participants, ensure they reflect the updated research baseline & test values
+        const seedMatch = SEED_PARTICIPANTS.find(sp => sp.name.toLowerCase() === u.name.toLowerCase());
+        if (seedMatch) {
           hasChanges = true;
-          return { ...u, baseline: generateDefaultBaseline() };
+          return seedMatch;
         }
-        return u;
+
+        let userBaseline = u.baseline;
+        if (!userBaseline) {
+          hasChanges = true;
+          userBaseline = generateDefaultBaseline(u.age);
+        }
+
+        const rtThreshold = getRtThresholdForAge(u.age);
+        const tempMargin  = getTempMarginForAge(u.age);
+
+        // Sanitize & re-evaluate test results according to participant age-dependent dynamic thresholds
+        const sanitizedResults = u.testResults.map(r => {
+          let tempDeltaC = r.tempDeltaC;
+          if (tempDeltaC !== null && tempDeltaC > 5.0 && userBaseline) {
+            hasChanges = true;
+            tempDeltaC = Number(Math.abs(tempDeltaC - userBaseline.tempC).toFixed(1));
+          }
+
+          const hrvPass  = r.rmssd !== null && userBaseline ? r.rmssd >= 0.9 * userBaseline.hrvRmssd : r.hrvPass;
+          const tempPass = tempDeltaC !== null ? tempDeltaC <= tempMargin : r.tempPass;
+          const rtPass   = r.medianRtMs !== null ? r.medianRtMs < rtThreshold : r.rtPass;
+          const cleared  = r.hrvDataValid && hrvPass && tempPass && rtPass;
+
+          // Re-calculate minutesToClearance to range between 5 and 30 minutes for failed tests
+          const minutesToClearance = cleared ? 0 : calculateEstimateMinutes(r.rmssd, tempDeltaC, userBaseline, u.age);
+
+          if (r.tempDeltaC !== tempDeltaC || r.tempPass !== tempPass || r.rtPass !== rtPass || r.cleared !== cleared || r.minutesToClearance !== minutesToClearance) {
+            hasChanges = true;
+          }
+
+          return {
+            ...r,
+            tempDeltaC,
+            tempPass,
+            rtPass,
+            cleared,
+            minutesToClearance,
+          };
+        });
+
+        return {
+          ...u,
+          baseline: userBaseline,
+          testResults: sanitizedResults,
+        };
       });
 
       if (hasChanges) {
@@ -96,6 +215,15 @@ export function ZyntraProvider({ children }: { children: React.ReactNode }) {
   // Save test result to currently selected user
   const saveTestResult = useCallback(async (r: ClearanceResult) => {
     if (!selectedUser) return;
+
+    // Recalculate tempDeltaC for display if ESP32 sent raw temperature (> 5.0°C)
+    // Preserves exact hardware collected verdict (cleared, tempPass, hrvPass, rtPass)
+    let tempDeltaC = r.tempDeltaC;
+    if (tempDeltaC !== null && selectedUser.baseline && tempDeltaC > 5.0) {
+      const tempCurrent = tempDeltaC;
+      tempDeltaC = Number(Math.abs(tempCurrent - selectedUser.baseline.tempC).toFixed(1));
+    }
+
     const testResult: TestResult = {
       id: `test_${Date.now()}`,
       timestamp: new Date().toISOString(),
@@ -105,7 +233,7 @@ export function ZyntraProvider({ children }: { children: React.ReactNode }) {
       tempPass: r.tempPass,
       rtPass: r.rtPass,
       rmssd: r.rmssd,
-      tempDeltaC: r.tempDeltaC,
+      tempDeltaC,
       medianRtMs: r.medianRtMs,
       minutesToClearance: r.minutesToClearance,
     };
@@ -162,8 +290,12 @@ export function ZyntraProvider({ children }: { children: React.ReactNode }) {
 
   const triggerBreak = useCallback(() => {
     setResult(null);
-    linkRef.current.triggerBreak();
-  }, []);
+    linkRef.current.triggerBreak(
+      selectedUser?.baseline?.tempC,
+      selectedUser?.baseline?.hrvRmssd,
+      selectedUser?.age
+    );
+  }, [selectedUser]);
 
   const acknowledgeResult = useCallback(() => {
     linkRef.current.acknowledgeResult();
@@ -180,7 +312,7 @@ export function ZyntraProvider({ children }: { children: React.ReactNode }) {
       ...data,
       id: `user_${Date.now()}`,
       createdAt: new Date().toISOString(),
-      baseline: generateDefaultBaseline(),
+      baseline: generateDefaultBaseline(data.age),
       testResults: [],
     };
     const updated = await import('./storage').then(s => s.addUser(newUser));

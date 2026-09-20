@@ -290,7 +290,18 @@ void enter_recovery() {
   last_mqtt_vitals  = 0;
   mqtt_notify_state(MQTT_STATE_RECOVERY);
   hrv_reset_buffer();
+
+  // Synchronize baselines if received via MQTT from app
+  if (temperature_get_baseline() > 0.0) {
+    temp_baseline = temperature_get_baseline();
+  }
+  if (hrv_get_baseline() > 0.0) {
+    hrv_baseline = hrv_get_baseline();
+  }
+
   Serial.println("[STATE] → RECOVERY");
+  Serial.print("[STATE] Active temp baseline: "); Serial.println(temp_baseline);
+  Serial.print("[STATE] Active HRV baseline: "); Serial.println(hrv_baseline);
   oled_show_message("RECOVERY", "Resting...");
 }
 
@@ -300,7 +311,8 @@ void run_clearance() {
   Serial.println("[STATE] → CLEARANCE");
   oled_show_message("Break ending...", "Stay relaxed.");
 
-  ClearanceResult result = clearance_run(hrv_baseline, temp_baseline);
+  uint8_t age = mqtt_get_participant_age();
+  ClearanceResult result = clearance_run(hrv_baseline, temp_baseline, age);
 
   // Notify MQTT broker & app immediately
   mqtt_notify_result(result);

@@ -22,6 +22,9 @@ void hrv_capture_baseline();
 // Get stored baseline RMSSD
 float hrv_get_baseline();
 
+// Manually set baseline RMSSD (used when baselines are passed from app)
+void hrv_set_baseline(float value);
+
 // Check if HRV has recovered to >= 90% of baseline
 bool hrv_is_cleared();
 
