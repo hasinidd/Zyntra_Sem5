@@ -10,7 +10,7 @@ export const SEED_PARTICIPANTS: GymUser[] = [
     age: 21,
     heightCm: 178,
     weightKg: 75,
-    role: 'Athlete / Bodybuilder',
+    role: 'Volleyball Player (UoM)',
     createdAt: '2026-09-18T08:00:00.000Z',
     baseline: {
       hrvRmssd: 54.2,
@@ -41,7 +41,7 @@ export const SEED_PARTICIPANTS: GymUser[] = [
     age: 24,
     heightCm: 172,
     weightKg: 80,
-    role: 'Powerlifter',
+    role: 'Volleyball Player (UoM)',
     createdAt: '2026-09-18T08:30:00.000Z',
     baseline: {
       hrvRmssd: 58.0,
@@ -72,7 +72,7 @@ export const SEED_PARTICIPANTS: GymUser[] = [
     age: 23,
     heightCm: 175,
     weightKg: 70,
-    role: 'Fitness Enthusiast',
+    role: 'Volleyball Player (UoM)',
     createdAt: '2026-09-18T09:00:00.000Z',
     baseline: {
       hrvRmssd: 62.5,
@@ -103,7 +103,7 @@ export const SEED_PARTICIPANTS: GymUser[] = [
     age: 24,
     heightCm: 180,
     weightKg: 78,
-    role: 'Crossfit Athlete',
+    role: 'Volleyball Player (UoM)',
     createdAt: '2026-09-18T09:30:00.000Z',
     baseline: {
       hrvRmssd: 66.0,
@@ -134,7 +134,7 @@ export const SEED_PARTICIPANTS: GymUser[] = [
     age: 21,
     heightCm: 170,
     weightKg: 68,
-    role: 'Endurance Trainer',
+    role: 'Volleyball Player (UoM)',
     createdAt: '2026-09-18T10:00:00.000Z',
     baseline: {
       hrvRmssd: 52.0,

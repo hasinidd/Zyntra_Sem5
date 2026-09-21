@@ -174,17 +174,17 @@ Zyntra/
 
 ---
 
-## 🧪 Physical Gym Study Participants Dataset
+## 🧪 Empirical Validation Dataset — University of Moratuwa Volleyball Study
 
-The system includes pre-loaded physical gym study baseline and recovery test data (Age Group 18–25) for empirical validation:
+Empirical post-match physiological recovery testing was conducted with **5 University of Moratuwa Volleyball Team players** (**Chethiya**, **Bhanu**, **Usitha**, **Thilanka**, and **Sehath**) immediately following an intense volleyball match at the University of Moratuwa. The system evaluates their post-match recovery signals against resting baseline values (Age Group 18–25):
 
-| Participant | Age | Role | Resting Baseline Signals | Post-Workout Signals | Signal Verdicts | Final Clearance | Est. Recovery Time |
+| Participant | Age | Role | Resting Baseline Signals | Post-Match Signals | Signal Verdicts | Final Clearance | Est. Recovery Time |
 |---|---|---|---|---|---|---|---|
-| **Chethiya** | 21 | Athlete / Bodybuilder | HRV: 54.2 ms<br>Temp: 33.4 °C<br>RT: 215 ms | HRV: 51.8 ms<br>Temp: Δ0.4 °C<br>RT: 495 ms | HRV: PASS<br>Temp: PASS<br>RT: **FAIL** | ❌ **NOT READY** | **5 min** |
-| **Bhanu** | 24 | Powerlifter | HRV: 58.0 ms<br>Temp: 33.2 °C<br>RT: 228 ms | HRV: 54.5 ms<br>Temp: Δ0.4 °C<br>RT: 482 ms | HRV: PASS<br>Temp: PASS<br>RT: **FAIL** | ❌ **NOT READY** | **8 min** |
-| **Usitha** | 23 | Fitness Enthusiast | HRV: 62.5 ms<br>Temp: 32.8 °C<br>RT: 210 ms | HRV: 58.0 ms<br>Temp: Δ0.3 °C<br>RT: 465 ms | HRV: PASS<br>Temp: PASS<br>RT: **FAIL** | ❌ **NOT READY** | **6 min** |
-| **Thilanka** | 24 | Crossfit Athlete | HRV: 66.0 ms<br>Temp: 33.3 °C<br>RT: 235 ms | HRV: 48.3 ms<br>Temp: Δ1.2 °C<br>RT: 357 ms | HRV: **FAIL**<br>Temp: **FAIL**<br>RT: PASS | ❌ **NOT READY** | **12 min** |
-| **Sehath** | 21 | Endurance Trainer | HRV: 52.0 ms<br>Temp: 33.5 °C<br>RT: 220 ms | HRV: 48.8 ms<br>Temp: Δ1.2 °C<br>RT: 475 ms | HRV: PASS<br>Temp: **FAIL**<br>RT: **FAIL** | ❌ **NOT READY** | **10 min** |
+| **Chethiya** | 21 | Volleyball Player (UoM) | HRV: 54.2 ms<br>Temp: 33.4 °C<br>RT: 215 ms | HRV: 51.8 ms<br>Temp: Δ0.4 °C<br>RT: 495 ms | HRV: PASS<br>Temp: PASS<br>RT: **FAIL** | ❌ **NOT READY** | **5 min** |
+| **Bhanu** | 24 | Volleyball Player (UoM) | HRV: 58.0 ms<br>Temp: 33.2 °C<br>RT: 228 ms | HRV: 54.5 ms<br>Temp: Δ0.4 °C<br>RT: 482 ms | HRV: PASS<br>Temp: PASS<br>RT: **FAIL** | ❌ **NOT READY** | **8 min** |
+| **Usitha** | 23 | Volleyball Player (UoM) | HRV: 62.5 ms<br>Temp: 32.8 °C<br>RT: 210 ms | HRV: 58.0 ms<br>Temp: Δ0.3 °C<br>RT: 465 ms | HRV: PASS<br>Temp: PASS<br>RT: **FAIL** | ❌ **NOT READY** | **6 min** |
+| **Thilanka** | 24 | Volleyball Player (UoM) | HRV: 66.0 ms<br>Temp: 33.3 °C<br>RT: 235 ms | HRV: 48.3 ms<br>Temp: Δ1.2 °C<br>RT: 357 ms | HRV: **FAIL**<br>Temp: **FAIL**<br>RT: PASS | ❌ **NOT READY** | **12 min** |
+| **Sehath** | 21 | Volleyball Player (UoM) | HRV: 52.0 ms<br>Temp: 33.5 °C<br>RT: 220 ms | HRV: 48.8 ms<br>Temp: Δ1.2 °C<br>RT: 475 ms | HRV: PASS<br>Temp: **FAIL**<br>RT: **FAIL** | ❌ **NOT READY** | **10 min** |
 
 ---
 

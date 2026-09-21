@@ -26,7 +26,7 @@ Zyntra/
 
 1. **User Profile & Participant Management**:
    - Track user profiles with age, height, weight, and role classification.
-   - Pre-loaded physical gym study dataset for participants (**Chethiya**, **Bhanu**, **Usitha**, **Thilanka**, **Sehath**) with exact resting baselines and post-workout recovery test signals.
+   - Pre-loaded empirical validation dataset for 5 **University of Moratuwa Volleyball Team players** (**Chethiya**, **Bhanu**, **Usitha**, **Thilanka**, **Sehath**) tested immediately post-match.
 
 2. **Age-Bracketed Dynamic Thresholds**:
    - **HRV (RMSSD)**: Age-adjusted resting reference baselines (e.g. median 52 ms for age 18–24, scaling by age bracket). Requires recovery RMSSD $\ge 90\%$ of worker's baseline.
@@ -46,15 +46,17 @@ Zyntra/
 
 ---
 
-## ⏱️ Physical Gym Study Participants Dataset (Age Group 18–25)
+## ⏱️ Empirical Validation Dataset — University of Moratuwa Volleyball Study
 
-| Participant | Age | Role | Baseline Signals | Post-Workout Signals | Signal Verdicts | Final Verdict | Est. Recovery Time |
+Post-match physiological recovery testing was conducted with **5 University of Moratuwa Volleyball Team players** (**Chethiya**, **Bhanu**, **Usitha**, **Thilanka**, and **Sehath**) immediately following an intense volleyball match at the University of Moratuwa (Age Group 18–25):
+
+| Participant | Age | Role | Baseline Signals | Post-Match Signals | Signal Verdicts | Final Verdict | Est. Recovery Time |
 |---|---|---|---|---|---|---|---|
-| **Chethiya** | 21 | Athlete / Bodybuilder | HRV: 54.2 ms, Temp: 33.4 °C, RT: 215 ms | HRV: 51.8 ms, Temp: Δ0.4 °C, RT: 495 ms | HRV: PASS, Temp: PASS, RT: **FAIL** | ❌ **NOT READY** | **5 min** |
-| **Bhanu** | 24 | Powerlifter | HRV: 58.0 ms, Temp: 33.2 °C, RT: 228 ms | HRV: 54.5 ms, Temp: Δ0.4 °C, RT: 482 ms | HRV: PASS, Temp: PASS, RT: **FAIL** | ❌ **NOT READY** | **8 min** |
-| **Usitha** | 23 | Fitness Enthusiast | HRV: 62.5 ms, Temp: 32.8 °C, RT: 210 ms | HRV: 58.0 ms, Temp: Δ0.3 °C, RT: 465 ms | HRV: PASS, Temp: PASS, RT: **FAIL** | ❌ **NOT READY** | **6 min** |
-| **Thilanka** | 24 | Crossfit Athlete | HRV: 66.0 ms, Temp: 33.3 °C, RT: 235 ms | HRV: 48.3 ms, Temp: Δ1.2 °C, RT: 357 ms | HRV: **FAIL**, Temp: **FAIL**, RT: PASS | ❌ **NOT READY** | **12 min** |
-| **Sehath** | 21 | Endurance Trainer | HRV: 52.0 ms, Temp: 33.5 °C, RT: 220 ms | HRV: 48.8 ms, Temp: Δ1.2 °C, RT: 475 ms | HRV: PASS, Temp: **FAIL**, RT: **FAIL** | ❌ **NOT READY** | **10 min** |
+| **Chethiya** | 21 | Volleyball Player (UoM) | HRV: 54.2 ms, Temp: 33.4 °C, RT: 215 ms | HRV: 51.8 ms, Temp: Δ0.4 °C, RT: 495 ms | HRV: PASS, Temp: PASS, RT: **FAIL** | ❌ **NOT READY** | **5 min** |
+| **Bhanu** | 24 | Volleyball Player (UoM) | HRV: 58.0 ms, Temp: 33.2 °C, RT: 228 ms | HRV: 54.5 ms, Temp: Δ0.4 °C, RT: 482 ms | HRV: PASS, Temp: PASS, RT: **FAIL** | ❌ **NOT READY** | **8 min** |
+| **Usitha** | 23 | Volleyball Player (UoM) | HRV: 62.5 ms, Temp: 32.8 °C, RT: 210 ms | HRV: 58.0 ms, Temp: Δ0.3 °C, RT: 465 ms | HRV: PASS, Temp: PASS, RT: **FAIL** | ❌ **NOT READY** | **6 min** |
+| **Thilanka** | 24 | Volleyball Player (UoM) | HRV: 66.0 ms, Temp: 33.3 °C, RT: 235 ms | HRV: 48.3 ms, Temp: Δ1.2 °C, RT: 357 ms | HRV: **FAIL**, Temp: **FAIL**, RT: PASS | ❌ **NOT READY** | **12 min** |
+| **Sehath** | 21 | Volleyball Player (UoM) | HRV: 52.0 ms, Temp: 33.5 °C, RT: 220 ms | HRV: 48.8 ms, Temp: Δ1.2 °C, RT: 475 ms | HRV: PASS, Temp: **FAIL**, RT: **FAIL** | ❌ **NOT READY** | **10 min** |
 
 ---
 

@@ -34,7 +34,7 @@ export default function UsersTab() {
       age: ageN,
       heightCm: hN,
       weightKg: wN,
-      role: role.trim() || 'Gym Member',
+      role: role.trim() || 'Volleyball Player',
     });
 
     setName(''); setAge(''); setHeight(''); setWeight(''); setRole('');
@@ -71,7 +71,7 @@ export default function UsersTab() {
     <View style={styles.screen}>
       {/* Header */}
       <View style={styles.headerRow}>
-        <Text style={styles.title}>Gym Participants</Text>
+        <Text style={styles.title}>Athletes & Participants</Text>
         <Pressable style={styles.addBtn} onPress={() => setShowForm(v => !v)}>
           <Text style={styles.addBtnText}>{showForm ? '✕ Cancel' : '+ Add user'}</Text>
         </Pressable>
@@ -87,7 +87,7 @@ export default function UsersTab() {
             <TextInput style={[styles.input, { flex: 1 }]} placeholder="Height (cm)" placeholderTextColor={colors.textMuted} value={height} onChangeText={setHeight} keyboardType="decimal-pad" maxLength={5} />
             <TextInput style={[styles.input, { flex: 1 }]} placeholder="Weight (kg)" placeholderTextColor={colors.textMuted} value={weight} onChangeText={setWeight} keyboardType="decimal-pad" maxLength={5} />
           </View>
-          <TextInput style={styles.input} placeholder="Role / occupation (optional)" placeholderTextColor={colors.textMuted} value={role} onChangeText={setRole} />
+          <TextInput style={styles.input} placeholder="Role / sport (optional)" placeholderTextColor={colors.textMuted} value={role} onChangeText={setRole} />
           {error ? <Text style={styles.error}>{error}</Text> : null}
           <Pressable style={styles.saveBtn} onPress={handleAdd}>
             <Text style={styles.saveBtnText}>Create participant</Text>
@@ -103,7 +103,7 @@ export default function UsersTab() {
         ListEmptyComponent={
           <View style={styles.empty}>
             <Text style={styles.emptyText}>No participants yet.</Text>
-            <Text style={styles.emptySubText}>Tap + Add user to add your first gym participant.</Text>
+            <Text style={styles.emptySubText}>Tap + Add user to add your first player or participant.</Text>
           </View>
         }
         renderItem={({ item }) => (
