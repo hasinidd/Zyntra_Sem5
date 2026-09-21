@@ -1,4 +1,4 @@
-# Zyntra — Post-Break Physiological Readiness System
+# Zyntra -- Post-Break Physiological Readiness System
 
 **Zyntra** is a multi-modal biometric readiness evaluation system designed for athlete performance testing and industrial safety clearance. It captures physiological baselines (**HRV RMSSD**, **Skin Temperature**, and **Tactile Reaction Time**) using an ESP32 wearable wristband and streams live telemetry via WiFi + MQTT to a React Native web/mobile dashboard.
 
@@ -6,7 +6,7 @@ Clearance decisions apply **age-bracketed dynamic physiological thresholds** der
 
 ---
 
-## 📁 Repository Structure
+##  Repository Structure
 
 ```
 Zyntra/
@@ -22,7 +22,7 @@ Zyntra/
 
 ---
 
-## ⚡ Features & Enhancements
+##  Features & Enhancements
 
 1. **User Profile & Participant Management**:
    - Track user profiles with age, height, weight, and role classification.
@@ -46,7 +46,7 @@ Zyntra/
 
 ---
 
-## ⏱️ Physical Gym Study Participants Dataset (Age Group 18–25)
+##  Physical Gym Study Participants Dataset (Age Group 18–25)
 
 | Participant | Age | Role | Baseline Signals | Post-Workout Signals | Signal Verdicts | Final Verdict | Est. Recovery Time |
 |---|---|---|---|---|---|---|---|
@@ -58,7 +58,7 @@ Zyntra/
 
 ---
 
-## 🛠️ Hardware Requirements
+##  Hardware Requirements
 
 - **ESP32-WROOM-32** development board
 - **MAX30102** Pulse Oximeter & Heart-Rate Sensor (I2C)
@@ -68,7 +68,7 @@ Zyntra/
 
 ---
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### ESP32 Firmware (`Zyntra_Sem5`)
 1. Open `Zyntra_Sem5` in VS Code with PlatformIO extension.
@@ -91,7 +91,7 @@ Zyntra/
 
 ---
 
-## 📡 MQTT Topics & Payloads
+##  MQTT Topics & Payloads
 
 - `zyntra/state`: Device state notifications (`BASELINE`, `SHIFT`, `RECOVERY`, `CLEARED`, `NOT_CLEARED`)
 - `zyntra/vitals`: Real-time HRV & temperature telemetry during recovery
